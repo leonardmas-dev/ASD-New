@@ -1,0 +1,7 @@
+sqlalchemy
+bcrypt
+pandas
+matplotlib
+python-dotenv
+passlib
+tabulate
