@@ -6,4 +6,4 @@ class HomePage(tk.Frame):
 
         # Basic welcome label for now
         label = tk.Label(self, text="Welcome to PAMS", font=("Arial", 24))
-        label.pack(pady=50)
+        label.pack(pady=50) 
