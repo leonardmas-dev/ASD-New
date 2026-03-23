@@ -24,11 +24,14 @@ tk.Label(root, text="Tenant Information")
 columns = ("Tenant ID", "First Name", "Last Name", "Phone", "Email", "Apartment")
 tree = ttk.Treeview(root, columns=columns, show="headings")
 
+
+
 for col in columns:
     tree.heading(col, text=col)
     tree.column(col, width=100)
 
 tree.pack(fill="both", expand=True)
+
 
 # If content goes off screen scroll bar allows to view more
 scrollbar = ttk.Scrollbar(root, orient="vertical", command=tree.yview)
@@ -49,5 +52,48 @@ for tenant in fetch_tenants():
             tenant.location_id 
         )
     )
+
+
+def delete_tenant():
+    selected_item = tree.selection()
+
+    if not selected_item:
+        messagebox.showwarning("Warning", "Select the tenant you want to delete first")
+        return
+
+    
+
+
+    tenant_data = tree.item(selected_item)["values"]
+    tenant_id = tenant_data[0]
+    #tenant_data is [1] and [2] because of how its displayed in the ui not in the database as first_name and last_name are the 2nd and 3rd items in the tree.
+    tenant_fname = tenant_data[1]
+    tenant_lname = tenant_data[2]
+    tenant_fullname = tenant_fname + " " + tenant_lname
+
+
+    confirm = messagebox.askyesno("Confirm", f"Delete {tenant_fullname} tenant?")
+    if not confirm:
+        return
+    
+    messagebox.showwarning("Tenant Deleted", f"{tenant_fullname}, was deleted.")
+
+    # Delete from database
+    with get_session() as session:
+        tenant = session.query(Tenant).filter_by(tenant_id=tenant_id).first()
+        if tenant:
+            session.delete(tenant)
+            session.commit()
+
+
+
+    # Remove from table in real time
+    tree.delete(selected_item)
+
+
+
+
+delete_btn = tk.Button(root, text="Delete Tenant", command=delete_tenant)
+delete_btn.pack(pady=10)
 
 root.mainloop()
