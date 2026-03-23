@@ -24,6 +24,7 @@ class Navigation:
                 ("Complaints", self.load_complaints),
                 ("Reports", self.load_reports),
                 ("User Management", self.load_users),
+                ("Logout", self.logout),
             ],
 
             "FrontDesk": [
@@ -32,24 +33,28 @@ class Navigation:
                 ("Leases", self.load_leases),
                 ("Maintenance", self.load_maintenance),
                 ("Complaints", self.load_complaints),
+                ("Logout", self.logout),
             ],
 
             "FinanceManager": [
                 ("Home", self.load_home),
                 ("Payments", self.load_payments),
                 ("Reports", self.load_reports),
+                ("Logout", self.logout),
             ],
 
             "MaintenanceStaff": [
                 ("Home", self.load_home),
                 ("Maintenance", self.load_maintenance),
                 ("Complaints", self.load_complaints),
+                ("Logout", self.logout),
             ],
 
             "Manager": [
                 ("Home", self.load_home),
                 ("Apartments", self.load_apartments),
                 ("Reports", self.load_reports),
+                ("Logout", self.logout),
             ],
 
             "Tenant": [
@@ -58,6 +63,7 @@ class Navigation:
                 ("Payments", self.load_payments),
                 ("Maintenance", self.load_maintenance),
                 ("Complaints", self.load_complaints),
+                ("Logout", self.logout),
             ],
         }
 
@@ -113,3 +119,9 @@ class Navigation:
     def load_users(self):
         from ui.user_management.users_home import UsersHome
         self.main_window.load_page(UsersHome)
+    
+    def logout(self):
+        self.main_window.destroy()
+        # Return to login page
+        from ui.login_page import LoginPage
+        LoginPage().mainloop()

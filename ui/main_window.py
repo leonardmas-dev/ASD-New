@@ -30,8 +30,9 @@ class MainWindow(tk.Tk):
             widget.destroy()
 
         # Create and display the new page
-        page = page_class(self.content_frame, self.user_session)
+        page = page_class(self.content_frame, self)
         page.pack(fill="both", expand=True)
+
 
 def start_ui(user_session=None):
     # Launch the main window (used by app.py)
