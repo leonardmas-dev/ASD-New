@@ -9,7 +9,7 @@ def add_tenant():
 
     # Error Validation, if all fields not filled
     if not name or not age or not apartment:
-        messagebox.showwarning("Input Error", "Please fill in all required fields.")
+        messagebox.showwarning("Please fill in all required fields.")
         return
     
 
@@ -21,7 +21,7 @@ def add_tenant():
 
     print(tenant_info)
 
-    messagebox.showinfo("Success", "Tenant added successfully!")
+    messagebox.showinfo("Tenant added successfully!")
 
     # Clear fields
     entry_name.delete(0, tk.END)
@@ -29,12 +29,12 @@ def add_tenant():
     entry_apartment.delete(0, tk.END)
     entry_phone.delete(0, tk.END)
 
-# Create window
+# Create base tkinter window
 root = tk.Tk()
 root.title("PAMS - Add Tenant")
 root.geometry("400x500")
 
-# Labels and Entries
+# Table of inputs for tenant info
 tk.Label(root, text="Tenant Name *").pack(pady=5)
 entry_name = tk.Entry(root, width=30)
 entry_name.pack()
@@ -54,7 +54,7 @@ entry_phone.pack()
 tk.Label(root, text="*: Required Fields", fg="red", font=("Helvetica", 9)).pack(pady=5)
 
 
-# Add submit btn
+#submit btn will run add_tenant function
 submit_btn = tk.Button(root,
             text="Add Tenant",
             width=20,
