@@ -1,54 +1,91 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+import mysql.connector
+from tkinter import messagebox
 
-class AddApartmentPage(tk.Frame):
-    def __init__(self, parent, controller):
-        super().__init__(parent)
-        self.controller = controller
+def get_db_connection():
+    try:
+        return mysql.connector.connect(
+            host="localhost",
+            user="root",          # Update this to your MySQL username
+            password="1105",  # Update this to your MySQL password
+            database="apartment_management" 
+        )
+    except mysql.connector.Error as err:
+        print(f"Database Connection Error: {err}")
+        return None
+
+def add_apartment(location_name, apt_type, rent, rooms, floor=1):
+    """
+    Saves a new apartment record to the 'apartment' table.
+    """
+    # 1. Map City Names to ID
+    location_map = {
+        "Bristol": 1,
+        "Cardiff": 2,
+        "London": 3,
+        "Manchester": 4
+    }
+    
+    loc_id = location_map.get(location_name, 1)
+
+    db = get_db_connection()
+    if not db:
+        return False 
+
+    cursor = db.cursor()
+
+    # 2. Match your EXACT MySQL columns from the screenshot
+    query = """
+        INSERT INTO apartment 
+        (location_id, apartment_type, monthly_rent, num_rooms, floor_number, is_available, is_active) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    values = (loc_id, apt_type, float(rent), int(rooms), int(floor), 1, 1)
+
+    try:
+        cursor.execute(query, values)
+        db.commit()
+        print(f"✅ Successfully inserted apartment at location {loc_id}")
+        return True
+    except mysql.connector.Error as err:
+        print(f"❌ SQL Error: {err}")
+        return False
+    finally:
+        cursor.close()
+        db.close()
+
+def get_all_apartments():
+    """Fetches all apartments to display in the Treeview list"""
+    db = get_db_connection()
+    if not db: return []
+    
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM apartment")
+    results = cursor.fetchall()
+    db.close()
+    return results
+
+# --- THE TEST BLOCK ---
+# This code only runs if you play this file directly
+if __name__ == "__main__":
+    print("--- STARTING DATABASE TEST ---")
+    
+    # Let's try to add one test apartment automatically
+    test_result = add_apartment(
+        location_name="Bristol", 
+        apt_type="2-Bedroom", 
+        rent=1200.00, 
+        rooms=3, 
+        floor=2
+    )
+    
+    if test_result:
+        print("Test 1: Success! Check your MySQL Workbench table.")
+    else:
+        print("Test 1: Failed. Read the error message above.")
         
-        # Title
-        label = tk.Label(self, text="Register New Apartment", font=("Arial", 18, "bold"))
-        label.grid(row=0, column=0, columnspan=2, pady=20)
-
-        # 1. Location Dropdown 
-        tk.Label(self, text="Location:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
-        self.location_cb = ttk.Combobox(self, values=["Bristol", "Cardiff", "London", "Manchester"])
-        self.location_cb.grid(row=1, column=1, padx=10, pady=5)
-
-        # 2. Apartment Type
-        tk.Label(self, text="Type:").grid(row=2, column=0, sticky="e", padx=10, pady=5)
-        self.type_cb = ttk.Combobox(self, values=["Studio", "1-Bedroom", "2-Bedroom", "Penthouse"])
-        self.type_cb.grid(row=2, column=1, padx=10, pady=5)
-
-        # 3. Monthly Rent
-        tk.Label(self, text="Monthly Rent (£):").grid(row=3, column=0, sticky="e", padx=10, pady=5)
-        self.rent_entry = tk.Entry(self)
-        self.rent_entry.grid(row=3, column=1, padx=10, pady=5)
-
-        # 4. Number of Rooms
-        tk.Label(self, text="Number of Rooms:").grid(row=4, column=0, sticky="e", padx=10, pady=5)
-        self.rooms_entry = tk.Entry(self)
-        self.rooms_entry.grid(row=4, column=1, padx=10, pady=5)
-
-        # Submit Button
-        submit_btn = tk.Button(self, text="Save Apartment", command=self.save_data, bg="green", fg="white")
-        submit_btn.grid(row=5, column=0, columnspan=2, pady=20)
-
-    def save_data(self):
-        # Validation Logic
-        location = self.location_cb.get()
-        rent = self.rent_entry.get()
-        
-        if not location or not rent:
-            messagebox.showerror("Error", "All fields are required!")
-            return
-        
-        try:
-            float(rent) # Ensure rent is a number
-        except ValueError:
-            messagebox.showerror("Error", "Rent must be a valid number.")
-            return
-
-        # Here you will call your backend/apartment_service.py
-        print(f"Saving Apartment in {location} for £{rent}")
-        messagebox.showinfo("Success", "Apartment registered successfully!")
+    # Let's see what is currently in the database
+    data = get_all_apartments()
+    print(f"Total apartments in DB: {len(data)}")
+    for row in data:
+        print(row)
