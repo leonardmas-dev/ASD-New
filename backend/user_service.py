@@ -7,8 +7,13 @@ class UserService:
 
     @staticmethod
     def get_all_users():
+        from sqlalchemy.orm import joinedload
         db = get_session()
-        users = db.query(User).all()
+        users = (
+            db.query(User)
+            .options(joinedload(User.location))
+            .all()
+        )
         db.close()
         return users
 
