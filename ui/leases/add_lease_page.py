@@ -7,7 +7,7 @@ import os
 # Fix for "ModuleNotFoundError"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-# Import your real backend function
+# Import backend function
 from backend.lease_service import create_lease
 
 class AddLeasePage(tk.Frame):
@@ -30,12 +30,12 @@ class AddLeasePage(tk.Frame):
         self.apt_entry = tk.Entry(form_frame)
         self.apt_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        # 3. Monthly Rent (NEW - Required by your DB)
+        # 3. Monthly Rent 
         tk.Label(form_frame, text="Monthly Rent (£):").grid(row=2, column=0, sticky="e", padx=10, pady=5)
         self.rent_entry = tk.Entry(form_frame)
         self.rent_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        # 4. Deposit (NEW - Required by your DB)
+        # 4. Deposit 
         tk.Label(form_frame, text="Deposit Amount (£):").grid(row=3, column=0, sticky="e", padx=10, pady=5)
         self.deposit_entry = tk.Entry(form_frame)
         self.deposit_entry.grid(row=3, column=1, padx=10, pady=5)
@@ -71,7 +71,7 @@ class AddLeasePage(tk.Frame):
             messagebox.showerror("Error", "Please fill in all required fields.")
             return
 
-        # 3. Call Backend Logic
+        # 3. Call Backend 
         success = create_lease(tenant_id, apt_id, start_date, duration, rent, deposit)
         
         if success:

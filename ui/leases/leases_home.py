@@ -15,21 +15,20 @@ class LeasesHome(tk.Frame):
 
         # 1. View All Leases (The List)
         list_btn = tk.Button(button_frame, text="View Active Leases", 
-                             width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
-                             command=lambda: self.controller.show_frame("LeaseListPage"))
+         width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
+        command=lambda: self.controller.show_frame("LeaseListPage"))
         list_btn.pack(pady=10)
 
         # 2. Create New Lease
         add_btn = tk.Button(button_frame, text="Create New Lease Agreement", 
-                            width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
-                            command=lambda: self.controller.show_frame("AddLeasePage"))
+        width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
+        command=lambda: self.controller.show_frame("AddLeasePage"))
         add_btn.pack(pady=10)
 
-        # 3. Handle Termination (Optional direct link)
-        # Often managers want to go straight to the list to find the lease to terminate
+        # 3. Handle Termination 
         
-        # 4. Back to Main System Menu
+         # 4. Back to Main System Menu
         back_btn = tk.Button(button_frame, text="← Back to Main Menu", 
-                             width=30, height=2, bg="#95a5a6", fg="white",
-                             command=lambda: self.controller.show_frame("MainMenu"))
+        width=30, height=2, bg="#95a5a6", fg="white",
+        command=lambda: self.controller.show_frame("MainMenu"))
         back_btn.pack(pady=30)

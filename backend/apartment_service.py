@@ -18,12 +18,12 @@ def add_apartment(location_name, apt_type, rent, rooms):
     db = get_db_connection()
     if not db: return False
     
-    # Map city names to the IDs in your location table
+    # Map city names to the IDs in my location table
     location_map = {"Bristol": 1, "Cardiff": 2, "London": 3, "Manchester": 4}
     loc_id = location_map.get(location_name, 1)
 
     cursor = db.cursor()
-    # Updated to match your exact DB columns: location_id and is_available
+    # Match my exact DB columns:
     query = """INSERT INTO apartment 
                (location_id, apartment_type, monthly_rent, num_rooms, is_available) 
                VALUES (%s, %s, %s, %s, 1)"""

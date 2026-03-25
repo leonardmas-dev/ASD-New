@@ -29,7 +29,7 @@ class LeaseListPage(tk.Frame):
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # Columns match your MySQL: lease_id, tenant (name), apartment, start, end, rent
+        # Columns section
         columns = ("id", "tenant", "apartment", "start", "end", "rent")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
 

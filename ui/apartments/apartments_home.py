@@ -15,18 +15,18 @@ class ApartmentsHome(tk.Frame):
 
         # 1. Button to View List
         view_btn = tk.Button(button_frame, text="View Apartment Inventory", 
-                             width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
-                             command=lambda: self.controller.show_frame("ApartmentListPage"))
+         width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
+        command=lambda: self.controller.show_frame("ApartmentListPage"))
         view_btn.pack(pady=10)
 
         # 2. Button to Add New
         add_btn = tk.Button(button_frame, text="Register New Apartment", 
-                            width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
-                            command=lambda: self.controller.show_frame("AddApartmentPage"))
+        width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
+        command=lambda: self.controller.show_frame("AddApartmentPage"))
         add_btn.pack(pady=10)
 
         # 3. Back to Main System Menu
         back_btn = tk.Button(button_frame, text="← Back to Main Menu", 
-                             width=30, height=2, bg="#95a5a6", fg="white",
-                             command=lambda: self.controller.show_frame("MainMenu"))
+         width=30, height=2, bg="#95a5a6", fg="white",
+        command=lambda: self.controller.show_frame("MainMenu"))
         back_btn.pack(pady=30)

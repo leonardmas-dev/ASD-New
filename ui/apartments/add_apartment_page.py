@@ -38,7 +38,7 @@ class AddApartmentPage(tk.Frame):
         self.rooms_entry = tk.Entry(self)
         self.rooms_entry.grid(row=4, column=1, padx=10, pady=5)
 
-        # 5. Floor Number (Added to match your DB schema)
+        # 5. Floor Number 
         tk.Label(self, text="Floor Number:").grid(row=5, column=0, sticky="e", padx=10, pady=5)
         self.floor_entry = tk.Entry(self)
         self.floor_entry.grid(row=5, column=1, padx=10, pady=5)
