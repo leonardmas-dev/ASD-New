@@ -12,7 +12,7 @@ class UserSession:
         self.role = role                # e.g. "Admin", "FinanceManager", "Tenant"
         self.is_tenant = is_tenant      # True if tenant, False if staff
         self.tenant_id = tenant_id      # tenant_id if tenant
-        self.location_id = location_id  # location scope if needed later
+        self.location_id = location_id  
 
 
 class AuthService:
@@ -45,7 +45,7 @@ class AuthService:
             self.db.query(User)
             .filter(
                 User.username == username,
-                User.is_active == True  # noqa: E712
+                User.is_active == True 
             )
             .first()
         )
@@ -74,8 +74,8 @@ class AuthService:
             .join(Tenant, TenantAccount.tenant_id == Tenant.tenant_id)
             .filter(
                 TenantAccount.username == username,
-                TenantAccount.is_active == True,  # noqa: E712
-                Tenant.is_active == True,         # noqa: E712
+                TenantAccount.is_active == True, 
+                Tenant.is_active == True,         
             )
             .first()
         )

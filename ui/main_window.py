@@ -24,17 +24,17 @@ class MainWindow(tk.Tk):
         from ui.navigation import Navigation
         Navigation(self.nav_frame, self)
 
-    def load_page(self, page_class):
+    def load_page(self, page_class, **kwargs):
         # Clear whatever page is currently displayed
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
         # Create and display the new page
-        page = page_class(self.content_frame, self)
+        page = page_class(self.content_frame, self, **kwargs)
         page.pack(fill="both", expand=True)
 
 
 def start_ui(user_session=None):
-    # Launch the main window (used by app.py)
+    # Launch the main window
     app = MainWindow(user_session)
     app.mainloop()

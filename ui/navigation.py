@@ -85,8 +85,12 @@ class Navigation:
 
     # Page loaders
     def load_home(self):
-        from ui.home_page import HomePage
-        self.main_window.load_page(HomePage)
+        if self.session.is_tenant:
+            from ui.tenant_portal.tenant_dashboard import TenantDashboard
+            self.main_window.load_page(TenantDashboard)
+        else:
+            from ui.home_page import HomePage
+            self.main_window.load_page(HomePage)
 
     def load_tenants(self):
         from ui.tenants.tenants_home import TenantsHome
@@ -117,9 +121,9 @@ class Navigation:
         self.main_window.load_page(ReportsHome)
 
     def load_users(self):
-        from ui.user_management.users_home import UsersHome
-        self.main_window.load_page(UsersHome)
-    
+        from ui.user_management.users_home import UsersHomePage
+        self.main_window.load_page(UsersHomePage)
+
     def logout(self):
         self.main_window.destroy()
         # Return to login page
