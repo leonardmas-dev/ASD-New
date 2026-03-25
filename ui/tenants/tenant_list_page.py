@@ -4,7 +4,7 @@ from tkinter import ttk, messagebox
 from backend.tenant_service import fetch_tenants
 from database.models import Tenant
 from database.session import get_session
-from tenants_home import TenantsHome
+from ui.tenants.tenants_home import TenantsHome
 
 
 '''
