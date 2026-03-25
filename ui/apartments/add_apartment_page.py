@@ -1,91 +1,94 @@
-import mysql.connector
-from tkinter import messagebox
+import tkinter as tk
+from tkinter import ttk, messagebox
+import sys
+import os
 
-def get_db_connection():
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",          # Update this to your MySQL username
-            password="1105",  # Update this to your MySQL password
-            database="apartment_management" 
-        )
-    except mysql.connector.Error as err:
-        print(f"Database Connection Error: {err}")
-        return None
+# Fix for "ModuleNotFoundError" when running this file directly
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-def add_apartment(location_name, apt_type, rent, rooms, floor=1):
-    """
-    Saves a new apartment record to the 'apartment' table.
-    """
-    # 1. Map City Names to ID
-    location_map = {
-        "Bristol": 1,
-        "Cardiff": 2,
-        "London": 3,
-        "Manchester": 4
-    }
-    
-    loc_id = location_map.get(location_name, 1)
+# Import the actual backend function
+from backend.apartment_service import add_apartment
 
-    db = get_db_connection()
-    if not db:
-        return False 
-
-    cursor = db.cursor()
-
-    # 2. Match your EXACT MySQL columns from the screenshot
-    query = """
-        INSERT INTO apartment 
-        (location_id, apartment_type, monthly_rent, num_rooms, floor_number, is_available, is_active) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s)
-    """
-    
-    values = (loc_id, apt_type, float(rent), int(rooms), int(floor), 1, 1)
-
-    try:
-        cursor.execute(query, values)
-        db.commit()
-        print(f"✅ Successfully inserted apartment at location {loc_id}")
-        return True
-    except mysql.connector.Error as err:
-        print(f"❌ SQL Error: {err}")
-        return False
-    finally:
-        cursor.close()
-        db.close()
-
-def get_all_apartments():
-    """Fetches all apartments to display in the Treeview list"""
-    db = get_db_connection()
-    if not db: return []
-    
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM apartment")
-    results = cursor.fetchall()
-    db.close()
-    return results
-
-# --- THE TEST BLOCK ---
-# This code only runs if you play this file directly
-if __name__ == "__main__":
-    print("--- STARTING DATABASE TEST ---")
-    
-    # Let's try to add one test apartment automatically
-    test_result = add_apartment(
-        location_name="Bristol", 
-        apt_type="2-Bedroom", 
-        rent=1200.00, 
-        rooms=3, 
-        floor=2
-    )
-    
-    if test_result:
-        print("Test 1: Success! Check your MySQL Workbench table.")
-    else:
-        print("Test 1: Failed. Read the error message above.")
+class AddApartmentPage(tk.Frame):
+    def __init__(self, parent, controller):
+        super().__init__(parent)
+        self.controller = controller
         
-    # Let's see what is currently in the database
-    data = get_all_apartments()
-    print(f"Total apartments in DB: {len(data)}")
-    for row in data:
-        print(row)
+        # Title
+        label = tk.Label(self, text="Register New Apartment", font=("Arial", 18, "bold"))
+        label.grid(row=0, column=0, columnspan=2, pady=20)
+
+        # 1. Location Dropdown 
+        tk.Label(self, text="Location:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
+        self.location_cb = ttk.Combobox(self, values=["Bristol", "Cardiff", "London", "Manchester"])
+        self.location_cb.grid(row=1, column=1, padx=10, pady=5)
+
+        # 2. Apartment Type
+        tk.Label(self, text="Type:").grid(row=2, column=0, sticky="e", padx=10, pady=5)
+        self.type_cb = ttk.Combobox(self, values=["Studio", "1-Bedroom", "2-Bedroom", "Penthouse"])
+        self.type_cb.grid(row=2, column=1, padx=10, pady=5)
+
+        # 3. Monthly Rent
+        tk.Label(self, text="Monthly Rent (£):").grid(row=3, column=0, sticky="e", padx=10, pady=5)
+        self.rent_entry = tk.Entry(self)
+        self.rent_entry.grid(row=3, column=1, padx=10, pady=5)
+
+        # 4. Number of Rooms
+        tk.Label(self, text="Number of Rooms:").grid(row=4, column=0, sticky="e", padx=10, pady=5)
+        self.rooms_entry = tk.Entry(self)
+        self.rooms_entry.grid(row=4, column=1, padx=10, pady=5)
+
+        # 5. Floor Number (Added to match your DB schema)
+        tk.Label(self, text="Floor Number:").grid(row=5, column=0, sticky="e", padx=10, pady=5)
+        self.floor_entry = tk.Entry(self)
+        self.floor_entry.grid(row=5, column=1, padx=10, pady=5)
+
+        # Submit Button
+        submit_btn = tk.Button(self, text="Save Apartment", command=self.save_data, bg="green", fg="white", width=20)
+        submit_btn.grid(row=6, column=0, columnspan=2, pady=20)
+
+    def save_data(self):
+        # 1. Capture Data from UI
+        location = self.location_cb.get()
+        apt_type = self.type_cb.get()
+        rent = self.rent_entry.get()
+        rooms = self.rooms_entry.get()
+        floor = self.floor_entry.get() or "1" # Default to 1 if empty
+        
+        # 2. Validation
+        if not location or not rent or not rooms:
+            messagebox.showerror("Error", "Location, Rent, and Rooms are required!")
+            return
+        
+        try:
+            float(rent) 
+            int(rooms)
+            int(floor)
+        except ValueError:
+            messagebox.showerror("Error", "Rent, Rooms, and Floor must be valid numbers.")
+            return
+
+        # 3. Call Backend
+        success = add_apartment(location, apt_type, rent, rooms, floor)
+        
+        if success:
+            messagebox.showinfo("Success", f"Apartment in {location} registered successfully!")
+            self.clear_fields()
+        else:
+            messagebox.showerror("Database Error", "Failed to save to MySQL. Check your connection.")
+
+    def clear_fields(self):
+        """Resets the form for the next entry"""
+        self.location_cb.set('')
+        self.type_cb.set('')
+        self.rent_entry.delete(0, tk.END)
+        self.rooms_entry.delete(0, tk.END)
+        self.floor_entry.delete(0, tk.END)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("PAMS - Add Apartment")
+    root.geometry("450x450")
+    app = AddApartmentPage(root, None)
+    app.pack(expand=True, fill="both")
+    root.mainloop()
