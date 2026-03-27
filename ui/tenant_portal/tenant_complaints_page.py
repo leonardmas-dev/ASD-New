@@ -22,6 +22,10 @@ class TenantComplaint(tk.Frame):
 
         tk.Button(self, text="Submit Complaint", command=self.submit_complaint).pack(pady=10)
 
+        
+
+        
+
         go_homebtn = tk.Button(self, text="Go Home", command=lambda: self.main_window.load_page(TenantDashboard))
         go_homebtn.pack(pady=10)
         
@@ -34,7 +38,7 @@ class TenantComplaint(tk.Frame):
             messagebox.showwarning("Warning", "Please enter a complaint description.")
             return
         
-        # Possibly wont work rn
+        
         tenant_id = 1
 
         # Hard coded for now
@@ -46,8 +50,9 @@ class TenantComplaint(tk.Frame):
                 tenant_id=tenant_id,
                 lease_id=lease_id,
                 description=complaint_text,
-                submitted_at=datetime.now(),
-                status="Pending"
+                status="Pending",
+                submitted_at=datetime.now()
+                
             )
             session.add(complaint)
             session.commit()
@@ -57,6 +62,8 @@ class TenantComplaint(tk.Frame):
 
         # Once Complaint goes through the text field resets
         self.complaint_box.delete("1.0", tk.END)
+
+    
 
         
 

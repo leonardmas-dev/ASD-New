@@ -85,7 +85,7 @@ class Navigation:
 
     # Page loaders
     def load_home(self):
-        if self.session.is_tenant:
+        if self.session.is_tenant or self.session.role == "Tenant":
             from ui.tenant_portal.tenant_dashboard import TenantDashboard
             self.main_window.load_page(TenantDashboard)
         else:
