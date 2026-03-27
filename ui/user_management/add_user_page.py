@@ -70,4 +70,5 @@ class AddUserPage(tk.Frame):
 
         UserService.create_user(data)
         messagebox.showinfo("Success", "User created.")
-        self.main_window.load_page("users_home")
+        from ui.user_management.users_home import UsersHomePage
+        self.main_window.load_page(UsersHomePage)
