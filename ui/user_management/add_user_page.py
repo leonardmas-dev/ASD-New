@@ -33,7 +33,8 @@ class AddUserPage(tk.Frame):
         self.load_locations()
 
         tk.Button(self, text="Create User", command=self.save_user, width=20).pack(pady=10)
-        tk.Button(self, text="Back", command=lambda: main_window.load_page("users_home")).pack()
+        from ui.user_management.users_home import UsersHomePage
+        tk.Button(self, text="Back", command=lambda: main_window.load_page(UsersHomePage)).pack()
 
     # helper to create a labeled entry
     def _add_field(self, parent, label, show=None):
