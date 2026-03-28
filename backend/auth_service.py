@@ -1,10 +1,8 @@
 import bcrypt
 from sqlalchemy.orm import Session
-
 from database.models import User, TenantAccount, Tenant
 
-
-# Simple session object to pass around logged-in user info
+# Session object to pass logged-in user info
 class UserSession:
     def __init__(self, user_id, username, role, is_tenant, tenant_id=None, location_id=None):
         self.user_id = user_id          # staff user_id or None for tenants
@@ -107,5 +105,4 @@ class AuthService:
                 stored_hash.encode("utf-8"),
             )
         except Exception:
-            # If anything goes wrong with hashing, treat as invalid
             return False
