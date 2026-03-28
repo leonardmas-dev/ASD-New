@@ -117,8 +117,8 @@ class Navigation:
         self.main_window.load_page(ComplaintsHome)
 
     def load_reports(self):
-        from ui.reports.reports_home import ReportsHome
-        self.main_window.load_page(ReportsHome)
+        from ui.reports.reports_home import ReportsHomePage
+        self.main_window.load_page(ReportsHomePage)
 
     def load_users(self):
         from ui.user_management.users_home import UsersHomePage
