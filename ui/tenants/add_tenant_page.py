@@ -1,69 +1,72 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
+from backend.tenant_service import TenantService
+from database.session import get_session
+from database.models import Location
 
-def add_tenant():
-    name = entry_name.get().strip()
-    age = entry_age.get().strip()
-    apartment = entry_apartment.get().strip()
-    phone = entry_phone.get().strip()
+class AddTenantPage(tk.Frame):
+    def __init__(self, parent, main_window):
+        super().__init__(parent)
+        self.main_window = main_window
 
-    # Error Validation, if all fields not filled
-    if not name or not age or not apartment:
-        messagebox.showwarning("Please fill in all required fields.")
-        return
-    
+        tk.Label(self, text="Add New Tenant", font=("Arial", 18, "bold")).pack(pady=10)
 
-    if not age.isdigit():
-        messagebox.showwarning("Input Error", "Age must be a number.")
-        return
+        form = tk.Frame(self)
+        form.pack(pady=10)
 
-    tenant_info = f"Name: {name}, Age: {age}, Apartment: {apartment}, Phone: {phone}"
+        # form fields
+        self.first_name = self._add_field(form, "First Name")
+        self.last_name = self._add_field(form, "Last Name")
+        self.email = self._add_field(form, "Email")
+        self.phone = self._add_field(form, "Phone")
 
-    print(tenant_info)
+        self.ni_number = self._add_field(form, "NI Number")
+        self.occupation = self._add_field(form, "Occupation")
 
-    messagebox.showinfo("Tenant added successfully!")
+        tk.Label(form, text="Location").grid(row=7, column=0, sticky="w")
+        self.location_box = ttk.Combobox(form)
+        self.location_box.grid(row=7, column=1, pady=5)
 
-    # Clear fields
-    entry_name.delete(0, tk.END)
-    entry_age.delete(0, tk.END)
-    entry_apartment.delete(0, tk.END)
-    entry_phone.delete(0, tk.END)
+        self.load_locations()
 
-# Create base tkinter window
-root = tk.Tk()
-root.title("PAMS - Add Tenant")
-root.geometry("400x500")
+        tk.Button(self, text="Create Tenant", command=self.save_tenant, width=20).pack(pady=10)
+        from ui.tenants.tenants_home import TenantsHome
+        tk.Button(self, text="Back", command=lambda: main_window.load_page(TenantsHome)).pack()
 
-# Table of inputs for tenant info
-tk.Label(root, text="Tenant Name *").pack(pady=5)
-entry_name = tk.Entry(root, width=30)
-entry_name.pack()
+    # helper to create a labeled entry
+    def _add_field(self, parent, label, show=None):
+        tk.Label(parent, text=label).grid(sticky="w")
+        entry = tk.Entry(parent, show=show)
+        entry.grid(row=parent.grid_size()[1]-1, column=1, pady=5)
+        return entry
 
-tk.Label(root, text="Age *").pack(pady=5)
-entry_age = tk.Entry(root, width=30)
-entry_age.pack()
+    # load locations into dropdown
+    def load_locations(self):
+        db = get_session()
+        locations = db.query(Location).all()
+        db.close()
+        self.location_box["values"] = [f"{loc.location_id} - {loc.city}" for loc in locations]
 
-tk.Label(root, text="Apartment Number *").pack(pady=5)
-entry_apartment = tk.Entry(root, width=30)
-entry_apartment.pack()
+    # save new user
+    def save_tenant(self):
+        if TenantService.ni_number_exists(self.ni_number.get()):
+            messagebox.showerror("Error", "An Account with this National Insurance number already exists.")
+            return
 
-tk.Label(root, text="Phone Number").pack(pady=5)
-entry_phone = tk.Entry(root, width=30)
-entry_phone.pack()
+        loc_id = int(self.location_box.get().split(" - ")[0])
 
-tk.Label(root, text="*: Required Fields", fg="red", font=("Helvetica", 9)).pack(pady=5)
+        data = {
+            "first_name": self.first_name.get(),
+            "last_name": self.last_name.get(),
+            "email": self.email.get(),
+            "phone": self.phone.get(),
+            "ni_number": self.ni_number.get(),
+            "occupation": self.occupation.get(),
+            
+            "location_id": loc_id
+        }
 
-
-#submit btn will run add_tenant function
-submit_btn = tk.Button(root,
-            text="Add Tenant",
-            width=20,
-            command=add_tenant,
-            bg="green",
-            fg="black",
-            activebackground="black",
-            activeforeground="white")
-
-submit_btn.pack(pady=20)
-
-root.mainloop()
+        TenantService.create_tenant(data)
+        messagebox.showinfo("Success", "Tenant Added.")
+        from ui.tenants.tenant_list_page import TenantList
+        self.main_window.load_page(TenantList)

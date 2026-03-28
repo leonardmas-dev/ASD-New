@@ -14,7 +14,13 @@ class TenantsHome(tk.Frame):
         
         tk.Button(self, text="View Tenants", command=self.open_tenant_list).pack(pady=20)
 
+        tk.Button(self, text="Add New Tenant", command=self.add_new_tenant).pack(pady=20)
+
     def open_tenant_list(self):
         #loading tenant page like this leads to not having circular imports
         from ui.tenants.tenant_list_page import TenantList
         self.main_window.load_page(TenantList)
+
+    def add_new_tenant(self):
+        from ui.tenants.add_tenant_page import AddTenantPage
+        self.main_window.load_page(AddTenantPage)
