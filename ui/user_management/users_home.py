@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from backend.user_service import UserService
 
+
 class UsersHomePage(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
@@ -9,6 +10,7 @@ class UsersHomePage(tk.Frame):
 
         tk.Label(self, text="User Management", font=("Arial", 18, "bold")).pack(pady=10)
 
+        # add user button
         tk.Button(
             self,
             text="Add New User",
@@ -16,6 +18,15 @@ class UsersHomePage(tk.Frame):
             width=20
         ).pack(pady=5)
 
+        # edit user button
+        tk.Button(
+            self,
+            text="Edit User",
+            command=self.open_edit_user_page,
+            width=20
+        ).pack(pady=5)
+
+        # table of staff users
         self.table = ttk.Treeview(
             self,
             columns=("name", "role", "location", "status"),
@@ -29,14 +40,10 @@ class UsersHomePage(tk.Frame):
 
         self.table.pack(fill="both", expand=True, pady=10)
 
-        # double-click to edit
-        self.table.bind("<Double-1>", self.open_edit_user)
-
         self.load_users()
 
-    # load all staff into table
+    # load all users into table
     def load_users(self):
-        # clear table
         for row in self.table.get_children():
             self.table.delete(row)
 
@@ -45,16 +52,12 @@ class UsersHomePage(tk.Frame):
         for u in users:
             name = f"{u.first_name} {u.last_name}"
             status = "Active" if u.is_active else "Inactive"
-
-            location = "N/A"
-            if hasattr(u, "location") and u.location:
-                location = getattr(u.location, "city", "N/A")
+            location = u.location.city if u.location else "N/A"
 
             self.table.insert(
                 "",
                 "end",
-                values=(name, u.role, location, status),
-                iid=u.user_id
+                values=(name, u.role, location, status)
             )
 
     # open add user page
@@ -63,9 +66,6 @@ class UsersHomePage(tk.Frame):
         self.main_window.load_page(AddUserPage)
 
     # open edit user page
-    def open_edit_user(self, event):
-        selected = self.table.focus()
-        if selected:
-            user_id = int(selected)
-            from ui.user_management.edit_user_page import EditUserPage
-            self.main_window.load_page(EditUserPage, user_id=user_id)
+    def open_edit_user_page(self):
+        from ui.user_management.edit_user_page import EditUserPage
+        self.main_window.load_page(EditUserPage)

@@ -1,17 +1,16 @@
 import bcrypt
 from database.session import get_session
 from database.models import User
-
+from sqlalchemy.orm import joinedload
 
 class UserService:
 
     @staticmethod
     def get_all_users():
-        from sqlalchemy.orm import joinedload
         db = get_session()
         users = (
             db.query(User)
-            .options(joinedload(User.location))
+            .options(joinedload(User.location))  # <-- ADD THIS
             .all()
         )
         db.close()
@@ -20,7 +19,12 @@ class UserService:
     @staticmethod
     def get_user_by_id(user_id):
         db = get_session()
-        user = db.query(User).filter(User.user_id == user_id).first()
+        user = (
+            db.query(User)
+            .options(joinedload(User.location))
+            .filter(User.user_id == user_id)
+            .first()
+        )
         db.close()
         return user
 
@@ -88,9 +92,16 @@ class UserService:
     def deactivate_user(user_id):
         db = get_session()
         user = db.query(User).filter(User.user_id == user_id).first()
-
         if user:
             user.is_active = False
             db.commit()
+        db.close()
 
+    @staticmethod
+    def activate_user(user_id):
+        db = get_session()
+        user = db.query(User).filter(User.user_id == user_id).first()
+        if user:
+            user.is_active = True
+            db.commit()
         db.close()
