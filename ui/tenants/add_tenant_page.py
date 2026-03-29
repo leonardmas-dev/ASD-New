@@ -18,6 +18,8 @@ class AddTenantPage(tk.Frame):
         self.first_name = self._add_field(form, "First Name")
         self.last_name = self._add_field(form, "Last Name")
         self.email = self._add_field(form, "Email")
+        
+
         self.phone = self._add_field(form, "Phone")
 
         self.ni_number = self._add_field(form, "NI Number")
@@ -59,6 +61,7 @@ class AddTenantPage(tk.Frame):
             "first_name": self.first_name.get(),
             "last_name": self.last_name.get(),
             "email": self.email.get(),
+
             "phone": self.phone.get(),
             "ni_number": self.ni_number.get(),
             "occupation": self.occupation.get(),

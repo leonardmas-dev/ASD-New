@@ -16,7 +16,7 @@ class TenantMaintenance(tk.Frame):
 
         self.tenant_id = self.session.tenant_id
 
-        self.load_lease()
+        self.load_leases()
 
         tk.Label(self, text="Make a Maintenance Request", fg="green", bg="white").pack()
 
@@ -44,7 +44,7 @@ class TenantMaintenance(tk.Frame):
         with get_session() as session:
                 lease = session.query(Lease).filter_by(
                     tenant_id=self.tenant_id,
-                    status="Active"
+                    is_active=True
                 ).first()
 
                 if lease:

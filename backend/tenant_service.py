@@ -1,6 +1,7 @@
-from database.models import Tenant
+from database.models import Tenant, TenantAccount
 from database.session import get_session
 from sqlalchemy.orm import joinedload
+import bcrypt
 
 def fetch_tenants():
     with get_session() as session:
@@ -57,6 +58,30 @@ class TenantService:
         )
         db.add(new_tenant)
         db.commit()
+        db.refresh(new_tenant)
+
+
+        # create default username of new tenant account
+
+
+        username = f"{data['first_name'].lower()}.{data['last_name'].lower()}"
+        # hash password using bcrypt
+        hashed_pw = bcrypt.hashpw(
+            # When new accounts are created they have default password of "password"
+            "password".encode("utf-8"),
+            bcrypt.gensalt()
+        ).decode("utf-8")
+
+        new_tenant_user = TenantAccount(
+            tenant_id = new_tenant.tenant_id,
+            username = username,
+            password_hash = hashed_pw,
+            is_active = True
+        )
+
+        db.add(new_tenant_user)
+        db.commit()
+        print(f"TenantAccount created with username: {username}")
         db.close()
 
     @staticmethod
