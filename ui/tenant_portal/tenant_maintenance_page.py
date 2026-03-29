@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 #from backend.tenant_service import fetch_tenants
-from database.models import MaintenanceRequest
+from database.models import MaintenanceRequest, Lease
 from datetime import datetime
 from database.session import get_session
 
@@ -12,7 +12,11 @@ class TenantMaintenance(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
         self.main_window = main_window
+        self.session = main_window.user_session
 
+        self.tenant_id = self.session.tenant_id
+
+        self.load_lease()
 
         tk.Label(self, text="Make a Maintenance Request", fg="green", bg="white").pack()
 
@@ -35,6 +39,22 @@ class TenantMaintenance(tk.Frame):
         go_homebtn = tk.Button(self, text="Go Home", command=lambda: self.main_window.load_page(TenantDashboard))
         go_homebtn.pack(pady=10)
 
+    def load_leases(self):
+
+        with get_session() as session:
+                lease = session.query(Lease).filter_by(
+                    tenant_id=self.tenant_id,
+                    status="Active"
+                ).first()
+
+                if lease:
+                    self.lease_id = lease.lease_id
+                    self.apartment_id = lease.apartment_id
+                else:
+                    self.lease_id = None
+                    self.apartment_id = None
+                    messagebox.showwarning("Warning", "No active lease found for your account.")
+
 
     def submit_maintenance(self):
 
@@ -45,18 +65,24 @@ class TenantMaintenance(tk.Frame):
             messagebox.showwarning("Warning", "Please enter a maintenance request description.")
             return
         
+        if not self.lease_id or not self.apartment_id:
+            messagebox.showerror("Error", "No active lease found")
+            return
         
+        
+        """
         tenant_id = 1
 
         # Hard coded for now
         lease_id = 1
+        """
 
         # Adds Request into DB
         with get_session() as session:
             maintenance = MaintenanceRequest(
-                tenant_id=tenant_id,
-                lease_id=lease_id,
-                apartment_id = 1,
+                tenant_id=self.tenant_id,
+                lease_id=self.lease_id,
+                apartment_id = self.apartment_id,
                 description=maintenance_text,
                 priority = "Medium",
                 submitted_at=datetime.now(),
@@ -85,10 +111,10 @@ class TenantMaintenance(tk.Frame):
 
 
         # Hard Coded for Now replace later
-        tenant_id = 1
+        
 
         with get_session() as session:
-            requests = session.query(MaintenanceRequest).filter_by(tenant_id=tenant_id).all()
+            requests = session.query(MaintenanceRequest).filter_by(tenant_id=self.tenant_id).all()
 
             for req in requests:
                 self.requests_table.insert("", "end", values=(
