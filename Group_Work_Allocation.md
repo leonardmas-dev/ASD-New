@@ -86,7 +86,7 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 ---
 
-## Section NO.3 - Allocated to: Adrian Motor – Payments & Billing
+## Section NO.3 - Allocated to: Yaseen Sassi – Payments & Billing
 
 **UI Folder**
 
