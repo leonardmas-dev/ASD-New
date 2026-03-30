@@ -129,3 +129,7 @@ class Navigation:
         # Return to login page
         from ui.login_page import LoginPage
         LoginPage().mainloop()
+        
+    def go_home(self):
+        from ui.home_page import HomePage
+        self.load_page(HomePage)

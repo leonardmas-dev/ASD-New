@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 
 from backend.tenant_service import TenantService
 from database.session import get_session
-from database.models import Tenant, TenantAccount, Location
+from database.models import TenantAccount, Location
 import bcrypt
 
 
@@ -15,7 +15,6 @@ class EditTenantPage(tk.Frame):
 
         tk.Label(self, text="Edit Tenant", font=("Arial", 18, "bold")).pack(pady=10)
 
-        # table container
         table_frame = tk.Frame(self)
         table_frame.pack(fill="both", expand=True, pady=10)
 
@@ -43,7 +42,6 @@ class EditTenantPage(tk.Frame):
 
         self.load_tenants()
 
-        # form fields
         form = tk.Frame(self)
         form.pack(pady=10)
 
@@ -81,8 +79,7 @@ class EditTenantPage(tk.Frame):
         tk.Button(self, text="Deactivate Tenant", command=self.deactivate_tenant).pack(pady=5)
         tk.Button(self, text="Activate Tenant", command=self.activate_tenant).pack(pady=5)
 
-        from ui.tenants.tenants_home import TenantsHome
-        tk.Button(self, text="Back", command=lambda: main_window.load_page(TenantsHome)).pack(pady=10)
+        tk.Button(self, text="Back", command=self.go_back).pack(pady=10)
 
     def load_tenants(self):
         for row in self.table.get_children():
@@ -149,19 +146,20 @@ class EditTenantPage(tk.Frame):
 
         loc_id = int(self.location_box.get().split(" - ")[0])
 
+        tenant = TenantService.get_tenant_by_id(self.current_tenant_id)
+
         data = {
             "first_name": self.first_name.get(),
             "last_name": self.last_name.get(),
             "email": self.email.get(),
             "phone": self.phone.get(),
-            "ni_number": TenantService.get_tenant_by_id(self.current_tenant_id).ni_number,
+            "ni_number": tenant.ni_number,
             "occupation": self.occupation.get(),
             "location_id": loc_id,
         }
 
         TenantService.update_tenant(self.current_tenant_id, data)
 
-        # password update
         if self.password.get().strip():
             db = get_session()
             account = db.query(TenantAccount).filter(TenantAccount.tenant_id == self.current_tenant_id).first()
@@ -175,13 +173,20 @@ class EditTenantPage(tk.Frame):
             db.close()
 
         messagebox.showinfo("Success", "Tenant updated.")
+        self.load_tenants()
 
     def deactivate_tenant(self):
         if self.current_tenant_id:
             TenantService.deactivate_tenant(self.current_tenant_id)
             messagebox.showinfo("Success", "Tenant deactivated.")
+            self.load_tenants()
 
     def activate_tenant(self):
         if self.current_tenant_id:
             TenantService.activate_tenant(self.current_tenant_id)
             messagebox.showinfo("Success", "Tenant activated.")
+            self.load_tenants()
+
+    def go_back(self):
+        from ui.tenants.tenants_home import TenantsHome
+        self.main_window.load_page(TenantsHome)
