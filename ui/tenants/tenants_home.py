@@ -1,6 +1,7 @@
-# This page is for admin/manager and landlord not tenants portal.
-
 import tkinter as tk
+from ui.tenants.add_tenant_page import AddTenantPage
+from ui.tenants.tenant_list_page import TenantList
+from ui.tenants.edit_tenant_page import EditTenantPage
 
 
 class TenantsHome(tk.Frame):
@@ -8,19 +9,16 @@ class TenantsHome(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
 
-        tk.Label(self, text="Tenants Home Page", font=("Arial", 18)).pack(pady=40)
-        
+        tk.Label(self, text="Tenant Management", font=("Arial", 18, "bold")).pack(pady=20)
 
-        
-        tk.Button(self, text="View Tenants", command=self.open_tenant_list).pack(pady=20)
+        tk.Button(self, text="Add Tenant", width=25,
+                  command=lambda: main_window.load_page(AddTenantPage)).pack(pady=10)
 
-        tk.Button(self, text="Add New Tenant", command=self.add_new_tenant).pack(pady=20)
+        tk.Button(self, text="View Tenants", width=25,
+                  command=lambda: main_window.load_page(TenantList)).pack(pady=10)
 
-    def open_tenant_list(self):
-        #loading tenant page like this leads to not having circular imports
-        from ui.tenants.tenant_list_page import TenantList
-        self.main_window.load_page(TenantList)
+        tk.Button(self, text="Edit Tenants", width=25,
+                  command=lambda: main_window.load_page(EditTenantPage)).pack(pady=10)
 
-    def add_new_tenant(self):
-        from ui.tenants.add_tenant_page import AddTenantPage
-        self.main_window.load_page(AddTenantPage)
+        tk.Button(self, text="Back", width=25,
+                  command=main_window.go_home).pack(pady=20)
