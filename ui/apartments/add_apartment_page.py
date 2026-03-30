@@ -3,16 +3,16 @@ from tkinter import ttk, messagebox
 import sys
 import os
 
-# Fix for "ModuleNotFoundError" when running this file directly
+# Fix for "ModuleNotFoundError"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
-# Import the actual backend function
+# Import backend and the Home page for navigation
 from backend.apartment_service import add_apartment
 
 class AddApartmentPage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller = controller
+        self.controller = controller # This is the main_window
         
         # Title
         label = tk.Label(self, text="Register New Apartment", font=("Arial", 18, "bold"))
@@ -43,19 +43,29 @@ class AddApartmentPage(tk.Frame):
         self.floor_entry = tk.Entry(self)
         self.floor_entry.grid(row=5, column=1, padx=10, pady=5)
 
+        # Button Container for horizontal layout
+        btn_frame = tk.Frame(self)
+        btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
+
         # Submit Button
-        submit_btn = tk.Button(self, text="Save Apartment", command=self.save_data, bg="green", fg="white", width=20)
-        submit_btn.grid(row=6, column=0, columnspan=2, pady=20)
+        submit_btn = tk.Button(btn_frame, text="Save Apartment", command=self.save_data, 
+                               bg="green", fg="white", width=15)
+        submit_btn.pack(side="left", padx=10)
+
+        # Back Button
+        from ui.apartments.apartments_home import ApartmentsHome
+        back_btn = tk.Button(btn_frame, text="Back", 
+                             command=lambda: self.controller.load_page(ApartmentsHome), 
+                             bg="#95a5a6", fg="white", width=15)
+        back_btn.pack(side="left", padx=10)
 
     def save_data(self):
-        # 1. Capture Data from UI
         location = self.location_cb.get()
         apt_type = self.type_cb.get()
         rent = self.rent_entry.get()
         rooms = self.rooms_entry.get()
-        floor = self.floor_entry.get() or "1" # Default to 1 if empty
+        floor = self.floor_entry.get() or "1"
         
-        # 2. Validation
         if not location or not rent or not rooms:
             messagebox.showerror("Error", "Location, Rent, and Rooms are required!")
             return
@@ -68,27 +78,20 @@ class AddApartmentPage(tk.Frame):
             messagebox.showerror("Error", "Rent, Rooms, and Floor must be valid numbers.")
             return
 
-        # 3. Call Backend
         success = add_apartment(location, apt_type, rent, rooms, floor)
         
         if success:
             messagebox.showinfo("Success", f"Apartment in {location} registered successfully!")
             self.clear_fields()
+            # Optional: Redirect to inventory list after saving
+            from ui.apartments.apartment_list_page import ApartmentListPage
+            self.controller.load_page(ApartmentListPage)
         else:
             messagebox.showerror("Database Error", "Failed to save to MySQL. Check your connection.")
 
     def clear_fields(self):
-        """Resets the form for the next entry"""
         self.location_cb.set('')
         self.type_cb.set('')
         self.rent_entry.delete(0, tk.END)
         self.rooms_entry.delete(0, tk.END)
         self.floor_entry.delete(0, tk.END)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("PAMS - Add Apartment")
-    root.geometry("450x450")
-    app = AddApartmentPage(root, None)
-    app.pack(expand=True, fill="both")
-    root.mainloop()
