@@ -8,14 +8,15 @@ class TenantList(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
 
-        tk.Label(self, text="Tenant Information", font=("Arial", 16, "bold")).pack(pady=10)
+        tenant_list_title = tk.Label(self, text="Tenant Information")
+        tenant_list_title.pack()
 
-        columns = ("Tenant ID", "First Name", "Last Name", "Phone", "Email", "Location")
+        columns = ("Tenant ID", "First Name", "Last Name", "Phone", "Email", "Apartment")
         self.tree = ttk.Treeview(self, columns=columns, show="headings")
 
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=120)
+            self.tree.column(col, width=100)
 
         self.tree.pack(fill="both", expand=True)
 
@@ -25,14 +26,13 @@ class TenantList(tk.Frame):
 
         self.load_data()
 
-        tk.Button(self, text="Go Home", command=self.go_home).pack(pady=10)
+        go_homebtn = tk.Button(self, text="Go Home", command=self.go_home)
+        go_homebtn.pack(pady=10)
 
     def load_data(self):
-        # Clear existing rows
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        # Insert fresh data
         for tenant in fetch_tenants():
             self.tree.insert(
                 "",
@@ -43,7 +43,7 @@ class TenantList(tk.Frame):
                     tenant.last_name,
                     tenant.phone,
                     tenant.email,
-                    tenant.location.city if tenant.location else "N/A"
+                    tenant.location_id
                 )
             )
 
