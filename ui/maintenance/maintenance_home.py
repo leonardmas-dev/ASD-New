@@ -13,7 +13,7 @@ class MaintenanceHome(tk.Frame):
 
 
         # TENANT MAINTENANCE ONLY
-        if self.session.is_tenant:
+        if self.session.is_tenant or self.session.role == "Tenant":
             tk.Button(self, text="Request Tenant Maintenance", command=self.open_tenant_maintenance).pack(pady=10)
 
     def open_tenant_maintenance(self):
