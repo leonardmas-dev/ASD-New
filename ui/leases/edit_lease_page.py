@@ -4,20 +4,29 @@ from datetime import datetime, timedelta
 import sys
 import os
 
-# Ensure backend can be found
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-from backend.lease_service import terminate_lease
+
+from database.session import SessionLocal
+from backend.lease_service import LeaseService
+
 
 class EditLeasePage(tk.Frame):
-    # 1. UPDATED: Catching data passed from the List Page via kwargs
-    def __init__(self, parent, controller, lease_id=None, tenant_name="--", apt_id=None, rent=0.0, **kwargs):
+    def __init__(
+        self,
+        parent,
+        controller,
+        lease_id=None,
+        tenant_name="--",
+        apt_id=None,
+        rent=0.0,
+        **kwargs,
+    ):
         super().__init__(parent)
         self.controller = controller
-        
-        # Store passed data
+
         self.current_lease_id = lease_id
         self.current_apt_id = apt_id
-        # Clean the rent string if it has a £ symbol
+
         try:
             self.current_rent = float(str(rent).replace('£', '').replace(',', ''))
         except ValueError:
@@ -25,7 +34,6 @@ class EditLeasePage(tk.Frame):
 
         tk.Label(self, text="Manage / Terminate Lease", font=("Arial", 18, "bold")).pack(pady=20)
 
-        # --- Info Section ---
         info_frame = tk.LabelFrame(self, text="Current Lease Details", padx=20, pady=10)
         info_frame.pack(pady=10, fill="x", padx=30)
 
@@ -34,11 +42,10 @@ class EditLeasePage(tk.Frame):
 
         self.lbl_tenant = tk.Label(info_frame, text=f"Tenant: {tenant_name}")
         self.lbl_tenant.pack(anchor="w")
-        
+
         self.lbl_rent = tk.Label(info_frame, text=f"Monthly Rent: £{self.current_rent:.2f}")
         self.lbl_rent.pack(anchor="w")
 
-        # --- Early Termination Section ---
         term_frame = tk.LabelFrame(self, text="Early Termination Request", padx=20, pady=10, fg="red")
         term_frame.pack(pady=20, fill="x", padx=30)
 
@@ -56,32 +63,52 @@ class EditLeasePage(tk.Frame):
         self.penalty_lbl = tk.Label(term_frame, text="Penalty Due: £0.00", font=("Arial", 10, "bold"))
         self.penalty_lbl.grid(row=3, column=0, columnspan=2)
 
-        # --- Action Buttons ---
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=20)
 
-        tk.Button(btn_frame, text="Confirm Termination", bg="#e74c3c", fg="white", 
-                  width=20, command=self.confirm_termination).pack(side="left", padx=10)
-        
-        # 2. UPDATED: Back/Cancel logic using load_page
+        tk.Button(
+            btn_frame,
+            text="Confirm Termination",
+            bg="#e74c3c",
+            fg="white",
+            width=20,
+            command=self.confirm_termination,
+        ).pack(side="left", padx=10)
+
         from ui.leases.lease_list_page import LeaseListPage
-        tk.Button(btn_frame, text="Cancel", 
-                  command=lambda: self.controller.load_page(LeaseListPage)).pack(side="left")
+        tk.Button(
+            btn_frame,
+            text="Cancel",
+            command=lambda: self.controller.load_page(LeaseListPage),
+        ).pack(side="left")
 
     def calculate_early_exit(self):
-        # Calculation: 5% of monthly rent
+        # 5% of monthly rent
         penalty = self.current_rent * 0.05
         self.penalty_lbl.config(text=f"Penalty Due: £{penalty:.2f}")
         messagebox.showinfo("Policy Check", "Paragon Policy: 1 month notice is required. 5% penalty applied.")
 
     def confirm_termination(self):
-        if not self.current_lease_id: return
-        
-        ans = messagebox.askyesno("Confirm", "Finalize early termination? This will make the apartment available immediately.")
-        if ans:
-            penalty = terminate_lease(self.current_lease_id, self.current_apt_id)
-            if penalty is not None:
-                messagebox.showinfo("Success", f"Lease terminated.\nPenalty of £{penalty:.2f} recorded.")
-                # 3. UPDATED: Redirect back to list
-                from ui.leases.lease_list_page import LeaseListPage
-                self.controller.load_page(LeaseListPage)
+        if not self.current_lease_id:
+            return
+
+        ans = messagebox.askyesno(
+            "Confirm",
+            "Finalize early termination? This will make the apartment available immediately.",
+        )
+        if not ans:
+            return
+
+        db = SessionLocal()
+        service = LeaseService(db)
+        try:
+            penalty = service.terminate_lease(self.current_lease_id, self.current_apt_id)
+        finally:
+            db.close()
+
+        if penalty is not None:
+            messagebox.showinfo("Success", f"Lease terminated.\nPenalty of £{penalty:.2f} recorded.")
+            from ui.leases.lease_list_page import LeaseListPage
+            self.controller.load_page(LeaseListPage)
+        else:
+            messagebox.showerror("Error", "Could not process termination.")

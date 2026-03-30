@@ -1,116 +1,194 @@
-import mysql.connector
+from typing import List, Dict, Optional
 
-# 1. Connection Helper
-def get_db_connection():
-    try:
-        return mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="1105", 
-            database="apartment_management"
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+
+from database.models import Apartment, Location
+
+
+class ApartmentService:
+    def __init__(self, db: Session):
+        # store db session
+        self.db = db
+
+    # resolve location by city or name
+    def _get_location_id(self, location_name: str) -> Optional[int]:
+        if not location_name:
+            return None
+        loc = (
+            self.db.query(Location)
+            .filter(
+                or_(
+                    Location.city == location_name,
+                    Location.name == location_name,
+                )
+            )
+            .first()
         )
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-        return None
+        return loc.location_id if loc else None
 
-# 2. Create (Add Apartment)
-def add_apartment(location_name, apt_type, rent, rooms):
-    db = get_db_connection()
-    if not db: return False
-    
-    # Map city names to the IDs in my location table
-    location_map = {"Bristol": 1, "Cardiff": 2, "London": 3, "Manchester": 4}
-    loc_id = location_map.get(location_name, 1)
+    # create apartment
+    def add_apartment(
+        self,
+        location_name: str,
+        apt_type: str,
+        rent: str,
+        rooms: str,
+        floor: str,
+    ) -> bool:
+        try:
+            location_id = self._get_location_id(location_name)
+            if location_id is None:
+                return False
 
-    cursor = db.cursor()
-    # Match my exact DB columns:
-    query = """INSERT INTO apartment 
-               (location_id, apartment_type, monthly_rent, num_rooms, is_available) 
-               VALUES (%s, %s, %s, %s, 1)"""
-    try:
-        cursor.execute(query, (loc_id, apt_type, float(rent), int(rooms)))
-        db.commit()
-        return True
-    except Exception as e:
-        print(f"Insert Error: {e}")
-        return False
-    finally:
-        db.close()
+            monthly_rent = int(float(rent))
+            num_rooms = int(rooms)
+            floor_number = int(floor or 1)
 
-# 3. Read (Fetch all for the Treeview)
-def get_all_apartments():
-    db = get_db_connection()
-    if not db: return []
-    
-    cursor = db.cursor(dictionary=True) 
-    cursor.execute("SELECT * FROM apartment")
-    results = cursor.fetchall()
-    db.close()
-    return results
+            apt = Apartment(
+                location_id=location_id,
+                apartment_type=apt_type or "Unknown",
+                monthly_rent=monthly_rent,
+                num_rooms=num_rooms,
+                floor_number=floor_number,
+                is_available=True,
+                is_active=True,
+            )
+            self.db.add(apt)
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            print(f"Insert Error: {e}")
+            return False
 
-# 4. Read Single (For the Edit Page)
-def get_apartment_by_id(apt_id):
-    db = get_db_connection()
-    if not db: return None
-    
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM apartment WHERE apartment_id = %s", (apt_id,))
-    result = cursor.fetchone()
-    db.close()
-    return result
+    # list all active apartments
+    def get_all_apartments(self) -> List[Dict]:
+        try:
+            apartments = (
+                self.db.query(Apartment)
+                .filter(Apartment.is_active == True)
+                .all()
+            )
+            data: List[Dict] = []
+            for a in apartments:
+                data.append(
+                    {
+                        "apartment_id": a.apartment_id,
+                        "location_id": a.location_id,
+                        "apartment_type": a.apartment_type,
+                        "monthly_rent": a.monthly_rent,
+                        "num_rooms": a.num_rooms,
+                        "is_available": 1 if a.is_available else 0,
+                    }
+                )
+            return data
+        except Exception as e:
+            print(f"Fetch Error: {e}")
+            return []
 
-# 5. Update
-def update_apartment(apt_id, location_name, apt_type, rent, status):
-    db = get_db_connection()
-    if not db: return False
-    
-    location_map = {"Bristol": 1, "Cardiff": 2, "London": 3, "Manchester": 4}
-    loc_id = location_map.get(location_name, 1)
-    # 1 for Available, 0 for Occupied/Maintenance
-    is_avail = 1 if status == "Available" else 0
+    # single apartment by id
+    def get_apartment_by_id(self, apt_id: int) -> Optional[Dict]:
+        try:
+            a = (
+                self.db.query(Apartment)
+                .filter(
+                    Apartment.apartment_id == apt_id,
+                    Apartment.is_active == True,
+                )
+                .first()
+            )
+            if not a:
+                return None
+            return {
+                "apartment_id": a.apartment_id,
+                "location_id": a.location_id,
+                "apartment_type": a.apartment_type,
+                "monthly_rent": a.monthly_rent,
+                "num_rooms": a.num_rooms,
+                "floor_number": a.floor_number,
+                "is_available": 1 if a.is_available else 0,
+            }
+        except Exception as e:
+            print(f"Fetch One Error: {e}")
+            return None
 
-    try:
-        cursor = db.cursor()
-        query = """UPDATE apartment 
-                   SET location_id=%s, apartment_type=%s, monthly_rent=%s, is_available=%s 
-                   WHERE apartment_id=%s"""
-        cursor.execute(query, (loc_id, apt_type, float(rent), is_avail, apt_id))
-        db.commit()
-        return True
-    except Exception as e:
-        print(f"Update Error: {e}")
-        return False
-    finally:
-        db.close()
+    # update apartment core fields + availability
+    def update_apartment(
+        self,
+        apt_id: int,
+        location_name: str,
+        apt_type: str,
+        rent: str,
+        status: str,
+    ) -> bool:
+        try:
+            a = (
+                self.db.query(Apartment)
+                .filter(
+                    Apartment.apartment_id == apt_id,
+                    Apartment.is_active == True,
+                )
+                .first()
+            )
+            if not a:
+                return False
 
-# 6. Delete
-def delete_apartment(apt_id):
-    db = get_db_connection()
-    if not db: return False
-    try:
-        cursor = db.cursor()
-        cursor.execute("DELETE FROM apartment WHERE apartment_id=%s", (apt_id,))
-        db.commit()
-        return True
-    except Exception as e:
-        print(f"Delete Error: {e}")
-        return False
-    finally:
-        db.close()
-def get_available_apartments():
-    """Fetches only apartments where is_available is 1"""
-    db = get_db_connection()
-    if not db: return []
-    
-    try:
-        cursor = db.cursor(dictionary=True)
-        #only want the ones that can actually be booked
-        query = "SELECT apartment_id, apartment_type FROM apartment WHERE is_available = 1"
-        cursor.execute(query)
-        results = cursor.fetchall()
-        return results
-    except Exception as e:
-        print(f"Fetch Available Error: {e}")
-        return []
-    finally:
-        db.close()
+            location_id = self._get_location_id(location_name) or a.location_id
+            a.location_id = location_id
+            a.apartment_type = apt_type or a.apartment_type
+            a.monthly_rent = int(float(rent)) if rent else a.monthly_rent
+
+            # status → availability flag
+            if status == "Available":
+                a.is_available = True
+            else:
+                a.is_available = False
+
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            print(f"Update Error: {e}")
+            return False
+
+    # hard delete (matches original behaviour)
+    def delete_apartment(self, apt_id: int) -> bool:
+        try:
+            a = (
+                self.db.query(Apartment)
+                .filter(Apartment.apartment_id == apt_id)
+                .first()
+            )
+            if not a:
+                return False
+
+            self.db.delete(a)
+            self.db.commit()
+            return True
+        except Exception as e:
+            self.db.rollback()
+            print(f"Delete Error: {e}")
+            return False
+
+    # list only available apartments for leasing
+    def get_available_apartments(self) -> List[Dict]:
+        try:
+            apartments = (
+                self.db.query(Apartment)
+                .filter(
+                    Apartment.is_active == True,
+                    Apartment.is_available == True,
+                )
+                .all()
+            )
+            return [
+                {
+                    "apartment_id": a.apartment_id,
+                    "apartment_type": a.apartment_type,
+                }
+                for a in apartments
+            ]
+        except Exception as e:
+            print(f"Fetch Available Error: {e}")
+            return []
