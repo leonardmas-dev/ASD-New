@@ -97,3 +97,20 @@ def delete_apartment(apt_id):
         return False
     finally:
         db.close()
+def get_available_apartments():
+    """Fetches only apartments where is_available is 1"""
+    db = get_db_connection()
+    if not db: return []
+    
+    try:
+        cursor = db.cursor(dictionary=True)
+        #only want the ones that can actually be booked
+        query = "SELECT apartment_id, apartment_type FROM apartment WHERE is_available = 1"
+        cursor.execute(query)
+        results = cursor.fetchall()
+        return results
+    except Exception as e:
+        print(f"Fetch Available Error: {e}")
+        return []
+    finally:
+        db.close()
