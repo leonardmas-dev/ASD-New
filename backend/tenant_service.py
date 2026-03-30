@@ -3,11 +3,11 @@ from database.session import get_session
 from sqlalchemy.orm import joinedload
 import bcrypt
 
+
 def fetch_tenants():
     with get_session() as session:
         return session.query(Tenant).all()
-    
-# tenant_service allows less code reuse as this file can be imported to all files
+
 
 class TenantService:
 
@@ -42,46 +42,47 @@ class TenantService:
         return exists is not None
 
     @staticmethod
+    def tenant_username_exists(username: str) -> bool:
+        db = get_session()
+        exists = db.query(TenantAccount).filter(TenantAccount.username == username).first()
+        db.close()
+        return exists is not None
+
+    @staticmethod
     def create_tenant(data):
         db = get_session()
+
         new_tenant = Tenant(
-            first_name = data["first_name"],
-            last_name = data["last_name"],
-            email = data["email"],
-            phone = data["phone"],
-            ni_number = data["ni_number"],
-            occupation = data.get("occupation"),
-            references_text = data.get("references_text"),
-            apartment_requirements = data.get("apartment_requirements"),
-            location_id = data["location_id"],
-            is_active = True
+            first_name=data["first_name"],
+            last_name=data["last_name"],
+            email=data["email"],
+            phone=data["phone"],
+            ni_number=data["ni_number"],
+            occupation=data.get("occupation"),
+            references_text=data.get("references_text"),
+            apartment_requirements=data.get("apartment_requirements"),
+            location_id=data["location_id"],
+            is_active=True
         )
+
         db.add(new_tenant)
         db.commit()
         db.refresh(new_tenant)
 
-
-        # create default username of new tenant account
-
-
-        username = f"{data['first_name'].lower()}.{data['last_name'].lower()}"
-        # hash password using bcrypt
         hashed_pw = bcrypt.hashpw(
-            # When new accounts are created they have default password of "password"
-            "password".encode("utf-8"),
+            data["password"].encode("utf-8"),
             bcrypt.gensalt()
         ).decode("utf-8")
 
         new_tenant_user = TenantAccount(
-            tenant_id = new_tenant.tenant_id,
-            username = username,
-            password_hash = hashed_pw,
-            is_active = True
+            tenant_id=new_tenant.tenant_id,
+            username=data["username"],
+            password_hash=hashed_pw,
+            is_active=True
         )
 
         db.add(new_tenant_user)
         db.commit()
-        print(f"TenantAccount created with username: {username}")
         db.close()
 
     @staticmethod
@@ -91,16 +92,17 @@ class TenantService:
         if not tenant:
             db.close()
             return
-        tenant.first_name = data["first_name"],
-        tenant.last_name = data["last_name"],
-        tenant.email = data["email"],
-        tenant.phone = data["phone"],
-        tenant.ni_number = data["ni_number"],
-        tenant.occupation = data.get("occupation"),
-        tenant.references_text = data.get("references_text"),
-        tenant.apartment_requirements = data.get("apartment_requirements"),
-        tenant.location_id = data["location_id"],
-        
+
+        tenant.first_name = data["first_name"]
+        tenant.last_name = data["last_name"]
+        tenant.email = data["email"]
+        tenant.phone = data["phone"]
+        tenant.ni_number = data["ni_number"]
+        tenant.occupation = data.get("occupation")
+        tenant.references_text = data.get("references_text")
+        tenant.apartment_requirements = data.get("apartment_requirements")
+        tenant.location_id = data["location_id"]
+
         db.commit()
         db.close()
 

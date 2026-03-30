@@ -10,7 +10,7 @@ class UserService:
         db = get_session()
         users = (
             db.query(User)
-            .options(joinedload(User.location))  # <-- ADD THIS
+            .options(joinedload(User.location))
             .all()
         )
         db.close()
