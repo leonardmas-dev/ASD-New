@@ -88,7 +88,7 @@ class ComplaintListPage(tk.Frame):
 
         data = self.tree.item(selected)["values"]
 
-        from ui.complaints.edit_complaint_page.py import EditComplaintPage
+        from ui.complaints.edit_complaint_page import EditComplaintPage
         self.controller.load_page(
             EditComplaintPage,
             complaint_id=data[0],
