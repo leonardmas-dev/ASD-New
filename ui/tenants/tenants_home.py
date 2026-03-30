@@ -31,10 +31,3 @@ class TenantsHome(tk.Frame):
             width=25,
             command=lambda: main_window.load_page(EditTenantPage)
         ).pack(pady=10)
-
-        tk.Button(
-            self,
-            text="Back",
-            width=25,
-            command=main_window.go_home
-        ).pack(pady=20)
