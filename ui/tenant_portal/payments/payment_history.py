@@ -5,20 +5,24 @@ from backend.payment_service import PaymentService
 
 
 class TenantPaymentsHistoryPage(tk.Frame):
+    """
+    Displays the tenant's full payment history.
+    """
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+
         self.main_window = main_window
         self.service = PaymentService()
-
-        tk.Label(self, text="My Payment History", font=("Arial", 18, "bold")).pack(pady=20)
-
         self.session = main_window.user_session
         self.tenant_id = self.session.tenant_id
+
+        tk.Label(self, text="My Payment History", font=("Arial", 18, "bold")).pack(pady=20)
 
         table_frame = tk.Frame(self)
         table_frame.pack(fill="both", expand=True, pady=10)
 
+        # --- Payment Table ---
         self.table = ttk.Treeview(
             table_frame,
             columns=("due", "paid", "status", "late", "late_fee"),
@@ -34,15 +38,13 @@ class TenantPaymentsHistoryPage(tk.Frame):
 
         self.table.pack(fill="both", expand=True)
 
-        from ui.tenant_portal.tenant_payments_page import TenantPaymentsPage
-        tk.Button(
-            self,
-            text="Back",
-            command=lambda: self.main_window.load_page(TenantPaymentsPage),
-        ).pack(pady=10)
+        # Back navigation
+        self.add_back_button()
 
+        # Load data
         self.load_history()
 
+    # --- Load payment history ---
     def load_history(self):
         for row in self.table.get_children():
             self.table.delete(row)
@@ -61,3 +63,12 @@ class TenantPaymentsHistoryPage(tk.Frame):
                     p.late_fee or 0,
                 ),
             )
+
+    # --- Back Button ---
+    def add_back_button(self):
+        from ui.tenant_portal.payments.payments_home import PaymentsHome
+        tk.Button(
+            self,
+            text="Back",
+            command=lambda: self.main_window.load_page(PaymentsHome),
+        ).pack(pady=20)

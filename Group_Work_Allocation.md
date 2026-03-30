@@ -150,7 +150,7 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 ---
 
-## Section NO.5 - Allocated to: Yaseen Sassi – Authentication + User Management + Reports + Core UI
+## Section NO.5 - Allocated to: Yaseen Sassi – Folder/File Structures + Database + Authentication + User Management and access control + Reports module + Core UI and Navigation
 
 **UI Folders**
 
@@ -188,10 +188,12 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 **Responsibilities**
 
+- Creating folder a complete and file structure for the app
+- Database creation using SQL Alchemy
 - Login system (staff + tenants)
 - Authentication and password handling
 - Role‑based access control
-- Navigation and menu structure
+- Navigation and home page structure
 - Home dashboard for staff
 - User (staff) management
 - All reporting (occupancy, financial, maintenance)
