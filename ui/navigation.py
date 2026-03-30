@@ -12,16 +12,18 @@ class Navigation:
         self.build_menu()
 
     def build_menu(self):
-        # Menu config per role
-        role_menus = {
+
+        # STAFF MENUS
+
+        staff_menus = {
             "Admin": [
                 ("Home", self.load_home),
                 ("Tenants", self.load_tenants),
                 ("Apartments", self.load_apartments),
                 ("Leases", self.load_leases),
                 ("Payments", self.load_payments),
-                ("Maintenance", self.load_maintenance),
-                ("Complaints", self.load_complaints),
+                ("Maintenance", self.load_maintenance_staff),
+                ("Complaints", self.load_complaints_staff),
                 ("Reports", self.load_reports),
                 ("User Management", self.load_users),
                 ("Logout", self.logout),
@@ -31,8 +33,8 @@ class Navigation:
                 ("Home", self.load_home),
                 ("Tenants", self.load_tenants),
                 ("Leases", self.load_leases),
-                ("Maintenance", self.load_maintenance),
-                ("Complaints", self.load_complaints),
+                ("Maintenance", self.load_maintenance_staff),
+                ("Complaints", self.load_complaints_staff),
                 ("Logout", self.logout),
             ],
 
@@ -45,8 +47,8 @@ class Navigation:
 
             "MaintenanceStaff": [
                 ("Home", self.load_home),
-                ("Maintenance", self.load_maintenance),
-                ("Complaints", self.load_complaints),
+                ("Maintenance", self.load_maintenance_staff),
+                ("Complaints", self.load_complaints_staff),
                 ("Logout", self.logout),
             ],
 
@@ -56,21 +58,30 @@ class Navigation:
                 ("Reports", self.load_reports),
                 ("Logout", self.logout),
             ],
-
-            "Tenant": [
-                ("Home", self.load_home),
-                ("My Lease", self.load_leases),
-                ("Payments", self.load_payments),
-                ("Maintenance", self.load_maintenance),
-                ("Complaints", self.load_complaints),
-                ("Logout", self.logout),
-            ],
         }
 
-        # Get allowed menu for this user
-        allowed_menu = role_menus.get(self.session.role, [])
+        # TENANT MENU
 
-        # Create buttons for allowed items
+        tenant_menu = [
+            ("Home", self.load_home),
+            ("My Lease", self.load_leases),
+            ("Payments", self.load_payments),
+            ("My Maintenance", self.load_maintenance_tenant),
+            ("My Complaints", self.load_complaints_tenant),
+            ("Logout", self.logout),
+        ]
+
+
+        # SELECT MENU BASED ON ROLE
+
+        if self.session.is_tenant or self.session.role == "Tenant":
+            allowed_menu = tenant_menu
+        else:
+            allowed_menu = staff_menus.get(self.session.role, [])
+
+
+        # RENDER BUTTONS
+
         for text, command in allowed_menu:
             btn = tk.Button(
                 self.parent,
@@ -83,15 +94,17 @@ class Navigation:
             )
             btn.pack(fill="x")
 
-    # Page loaders
+    # PAGE LOADERS
+
     def load_home(self):
-        if self.session.is_tenant or self.session.role == "Tenant":
+        if self.session.is_tenant:
             from ui.tenant_portal.tenant_dashboard import TenantDashboard
             self.main_window.load_page(TenantDashboard)
         else:
             from ui.home_page import HomePage
             self.main_window.load_page(HomePage)
 
+    # STAFF LOADERS
     def load_tenants(self):
         from ui.tenants.tenants_home import TenantsHome
         self.main_window.load_page(TenantsHome)
@@ -108,11 +121,11 @@ class Navigation:
         from ui.payments.payments_home import PaymentsHome
         self.main_window.load_page(PaymentsHome)
 
-    def load_maintenance(self):
+    def load_maintenance_staff(self):
         from ui.maintenance.maintenance_home import MaintenanceHome
         self.main_window.load_page(MaintenanceHome)
 
-    def load_complaints(self):
+    def load_complaints_staff(self):
         from ui.complaints.complaints_home import ComplaintsHome
         self.main_window.load_page(ComplaintsHome)
 
@@ -124,12 +137,17 @@ class Navigation:
         from ui.user_management.users_home import UsersHomePage
         self.main_window.load_page(UsersHomePage)
 
+    # TENANT LOADERS
+    def load_maintenance_tenant(self):
+        from ui.tenant_portal.tenant_maintenance_page import TenantMaintenance
+        self.main_window.load_page(TenantMaintenance)
+
+    def load_complaints_tenant(self):
+        from ui.tenant_portal.tenant_complaints_page import TenantComplaint
+        self.main_window.load_page(TenantComplaint)
+
+    # LOGOUT
     def logout(self):
         self.main_window.destroy()
-        # Return to login page
         from ui.login_page import LoginPage
         LoginPage().mainloop()
-        
-    def go_home(self):
-        from ui.home_page import HomePage
-        self.load_page(HomePage)
