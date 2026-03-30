@@ -27,11 +27,3 @@ class LeasesHome(tk.Frame):
                             width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
                             command=lambda: self.controller.load_page(AddLeasePage))
         add_btn.pack(pady=10)
-
-        # 3. Back to Main Menu 
-        # Note: You may need to import MainMenu at the top if it fails
-        back_btn = tk.Button(button_frame, text="← Back to Main Menu", 
-                             width=30, height=2, bg="#95a5a6", fg="white",
-                             command=lambda: print("Returning to main menu...")) 
-        back_btn.pack(pady=30)
-        

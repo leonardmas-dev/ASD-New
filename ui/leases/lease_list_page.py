@@ -29,7 +29,6 @@ class LeaseListPage(tk.Frame):
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
-        # Columns section
         columns = ("id", "tenant", "apartment", "start", "end", "rent")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings")
 
@@ -51,14 +50,19 @@ class LeaseListPage(tk.Frame):
         
         tk.Button(btn_frame, text="Refresh Leases", command=self.load_leases, width=15).pack(side="left", padx=10)
         
-        # Termination button
-        tk.Button(btn_frame, text="Early Termination", 
-                  bg="#e67e22", fg="white", width=20, 
+        # --- ADDED: Edit Button ---
+        tk.Button(btn_frame, text="Edit / Terminate", 
+                  bg="#3498db", fg="white", width=18, 
+                  command=self.go_to_edit).pack(side="left", padx=10)
+        
+        # Termination button (Quick Action)
+        tk.Button(btn_frame, text="Quick Termination", 
+                  bg="#e67e22", fg="white", width=18, 
                   command=self.process_termination).pack(side="left", padx=10)
 
         # Back Button
         from ui.leases.leases_home import LeasesHome
-        tk.Button(btn_frame, text="Back", bg="#95a5a6", fg="white", width=15,
+        tk.Button(btn_frame, text="Back", bg="#95a5a6", fg="white", width=12,
                   command=lambda: self.controller.load_page(LeasesHome)).pack(side="left", padx=10)
 
         # Initial data load
@@ -69,10 +73,9 @@ class LeaseListPage(tk.Frame):
         for item in self.tree.get_children():
             self.tree.delete(item)
 
-        leases = get_all_leases() # Real backend call
+        leases = get_all_leases() 
         for l in leases:
             tenant_name = f"{l['first_name']} {l['last_name']}"
-            
             self.tree.insert("", "end", values=(
                 l['lease_id'],
                 tenant_name,
@@ -82,24 +85,43 @@ class LeaseListPage(tk.Frame):
                 f"£{l['monthly_rent']}"
             ))
 
-    def process_termination(self):
-        """Processes early termination with the 5% penalty"""
+    def go_to_edit(self):
+        """Passes selected lease data to the Edit page"""
         selected = self.tree.focus()
         if not selected:
-            messagebox.showwarning("Selection", "Please select a lease to terminate.")
+            messagebox.showwarning("Selection", "Please select a lease to manage.")
+            return
+
+        # Get values from the selected row
+        l_data = self.tree.item(selected)['values']
+        
+        from ui.leases.edit_lease_page import EditLeasePage
+        if self.controller:
+            self.controller.load_page(
+                EditLeasePage,
+                lease_id=l_data[0],
+                tenant_name=l_data[1],
+                apt_id=l_data[2],
+                rent=l_data[5]
+            )
+
+    def process_termination(self):
+        """Quickly processes early termination with penalty"""
+        selected = self.tree.focus()
+        if not selected:
+            messagebox.showwarning("Selection", "Please select a lease.")
             return
 
         values = self.tree.item(selected)['values']
         lease_id = values[0]
         apt_id = values[2]
 
-        confirm = messagebox.askyesno("Confirm", f"Are you sure you want to terminate Lease #{lease_id}?\nThis will apply a 5% penalty.")
-        
+        confirm = messagebox.askyesno("Confirm", f"Are you sure you want to terminate Lease #{lease_id}?")
         if confirm:
-            penalty = terminate_lease(lease_id, apt_id) # Real backend call
+            penalty = terminate_lease(lease_id, apt_id)
             if penalty is not None:
-                messagebox.showinfo("Success", f"Lease Terminated.\n\nEarly Termination Penalty: £{penalty:.2f}\nApartment {apt_id} is now Available.")
-                self.load_leases() # Refresh the table
+                messagebox.showinfo("Success", f"Lease Terminated.\nPenalty: £{penalty:.2f}")
+                self.load_leases()
             else:
                 messagebox.showerror("Error", "Could not process termination.")
 

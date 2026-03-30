@@ -9,12 +9,19 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'
 from backend.lease_service import terminate_lease
 
 class EditLeasePage(tk.Frame):
-    def __init__(self, parent, controller):
+    # 1. UPDATED: Catching data passed from the List Page via kwargs
+    def __init__(self, parent, controller, lease_id=None, tenant_name="--", apt_id=None, rent=0.0, **kwargs):
         super().__init__(parent)
         self.controller = controller
-        self.current_lease_id = None
-        self.current_apt_id = None
-        self.current_rent = 0.0
+        
+        # Store passed data
+        self.current_lease_id = lease_id
+        self.current_apt_id = apt_id
+        # Clean the rent string if it has a £ symbol
+        try:
+            self.current_rent = float(str(rent).replace('£', '').replace(',', ''))
+        except ValueError:
+            self.current_rent = 0.0
 
         tk.Label(self, text="Manage / Terminate Lease", font=("Arial", 18, "bold")).pack(pady=20)
 
@@ -22,13 +29,13 @@ class EditLeasePage(tk.Frame):
         info_frame = tk.LabelFrame(self, text="Current Lease Details", padx=20, pady=10)
         info_frame.pack(pady=10, fill="x", padx=30)
 
-        self.lbl_id = tk.Label(info_frame, text="Lease ID: --")
+        self.lbl_id = tk.Label(info_frame, text=f"Lease ID: {lease_id if lease_id else '--'}")
         self.lbl_id.pack(anchor="w")
 
-        self.lbl_tenant = tk.Label(info_frame, text="Tenant: --")
+        self.lbl_tenant = tk.Label(info_frame, text=f"Tenant: {tenant_name}")
         self.lbl_tenant.pack(anchor="w")
         
-        self.lbl_rent = tk.Label(info_frame, text="Monthly Rent: £0.00")
+        self.lbl_rent = tk.Label(info_frame, text=f"Monthly Rent: £{self.current_rent:.2f}")
         self.lbl_rent.pack(anchor="w")
 
         # --- Early Termination Section ---
@@ -40,7 +47,6 @@ class EditLeasePage(tk.Frame):
 
         tk.Label(term_frame, text="Intended Move-out Date:").grid(row=1, column=0, sticky="w")
         self.move_out_entry = tk.Entry(term_frame)
-        # Default to 1 month from now per policy
         self.move_out_entry.insert(0, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
         self.move_out_entry.grid(row=1, column=1, padx=10, pady=5)
 
@@ -57,18 +63,10 @@ class EditLeasePage(tk.Frame):
         tk.Button(btn_frame, text="Confirm Termination", bg="#e74c3c", fg="white", 
                   width=20, command=self.confirm_termination).pack(side="left", padx=10)
         
-        tk.Button(btn_frame, text="Cancel", command=lambda: self.controller.show_frame("LeaseListPage")).pack(side="left")
-
-    def set_lease_data(self, lease_id, tenant_name, apt_id, rent):
-        """Called by the List Page to load data into this form"""
-        self.current_lease_id = lease_id
-        self.current_apt_id = apt_id
-        self.current_rent = float(str(rent).replace('£', ''))
-        
-        self.lbl_id.config(text=f"Lease ID: {lease_id}")
-        self.lbl_tenant.config(text=f"Tenant: {tenant_name}")
-        self.lbl_rent.config(text=f"Monthly Rent: £{self.current_rent:.2f}")
-        self.penalty_lbl.config(text="Penalty Due: £0.00")
+        # 2. UPDATED: Back/Cancel logic using load_page
+        from ui.leases.lease_list_page import LeaseListPage
+        tk.Button(btn_frame, text="Cancel", 
+                  command=lambda: self.controller.load_page(LeaseListPage)).pack(side="left")
 
     def calculate_early_exit(self):
         # Calculation: 5% of monthly rent
@@ -84,4 +82,6 @@ class EditLeasePage(tk.Frame):
             penalty = terminate_lease(self.current_lease_id, self.current_apt_id)
             if penalty is not None:
                 messagebox.showinfo("Success", f"Lease terminated.\nPenalty of £{penalty:.2f} recorded.")
-                self.controller.show_frame("LeaseListPage")
+                # 3. UPDATED: Redirect back to list
+                from ui.leases.lease_list_page import LeaseListPage
+                self.controller.load_page(LeaseListPage)
