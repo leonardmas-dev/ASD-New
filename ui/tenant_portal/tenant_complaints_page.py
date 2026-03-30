@@ -1,13 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-
-#from backend.tenant_service import fetch_tenants
-from database.models import Complaint, Lease
 from datetime import datetime
-from database.session import get_session
 
+from database.session import SessionLocal
+from database.models import Lease
+from backend.complaint_service import ComplaintService
 
 from ui.tenant_portal.tenant_dashboard import TenantDashboard
+
 
 class TenantComplaint(tk.Frame):
     def __init__(self, parent, main_window):
@@ -15,89 +15,100 @@ class TenantComplaint(tk.Frame):
         self.main_window = main_window
         self.session = main_window.user_session
         self.tenant_id = self.session.tenant_id
-        self.load_leases()
 
+        self.apartment_id = None
+        self.load_active_lease()
 
-        tk.Label(self, text="Make a Complaint", fg="red", bg="white").pack()
+        tk.Label(self, text="Make a Complaint", fg="red", bg="white", font=("Arial", 16, "bold")).pack(pady=10)
 
-        # Complaint Description Box
-        self.complaint_box = tk.Text(self, height=10, width=50)
-        self.complaint_box.pack()
+        self.complaint_box = tk.Text(self, height=8, width=60)
+        self.complaint_box.pack(pady=5)
 
         tk.Button(self, text="Submit Complaint", command=self.submit_complaint).pack(pady=10)
 
-        self.complaints_table = ttk.Treeview(self,columns=("Status","Date","Description"), show="headings")
-        self.complaints_table.heading("Status", text="Status")
-        self.complaints_table.heading("Date", text="Submitted on")
-        self.complaints_table.heading("Description", text="Description")
-        self.complaints_table.pack(pady=10)
+        cols = ("Status", "Date", "Description")
+        self.complaints_table = ttk.Treeview(self, columns=cols, show="headings")
+        for c in cols:
+            self.complaints_table.heading(c, text=c)
+        self.complaints_table.column("Status", width=100)
+        self.complaints_table.column("Date", width=150)
+        self.complaints_table.column("Description", width=350)
+        self.complaints_table.pack(pady=10, fill="x")
 
-        tk.Button(self,text="View Complaints", command=self.show_complaints).pack(pady=10)
+        tk.Button(self, text="View Complaints", command=self.show_complaints).pack(pady=5)
 
-        
+        tk.Button(
+            self,
+            text="Go Home",
+            command=lambda: self.main_window.load_page(TenantDashboard),
+        ).pack(pady=10)
 
-        go_homebtn = tk.Button(self, text="Go Home", command=lambda: self.main_window.load_page(TenantDashboard))
-        go_homebtn.pack(pady=10)
-
-    def load_leases(self):
-        with get_session() as session:
-            lease = session.query(Lease).filter_by(
-                tenant_id = self.tenant_id,
-                is_active = True
-            ).first()
-
+    def load_active_lease(self):
+        db = SessionLocal()
+        try:
+            lease = (
+                db.query(Lease)
+                .filter(Lease.tenant_id == self.tenant_id, Lease.is_active == True)
+                .first()
+            )
             if lease:
-                self.lease_id = lease.lease_id
+                # assume lease has apartment_id
+                self.apartment_id = lease.apartment_id
             else:
-                self.lease_id = None
-                messagebox.showwarning("Warning", "No Active Leases Found")
-        
-    def submit_complaint(self):
+                self.apartment_id = None
+                messagebox.showwarning("Warning", "No active lease found. Complaints will be disabled.")
+        finally:
+            db.close()
 
-        # Complaint that was written in box
+    def submit_complaint(self):
         complaint_text = self.complaint_box.get("1.0", tk.END).strip()
 
         if not complaint_text:
-            messagebox.showwarning("Waning", "Please enter a complaint description.")
+            messagebox.showwarning("Warning", "Please enter a complaint description.")
             return
-        
-        
-      
 
-        # Adds complaint into DB
-        with get_session() as session:
-            complaint = Complaint(
+        if not self.apartment_id:
+            messagebox.showerror("Error", "No active apartment found for this tenant.")
+            return
+
+        db = SessionLocal()
+        service = ComplaintService(db)
+        try:
+            ok = service.create_complaint(
                 tenant_id=self.tenant_id,
-                lease_id=self.lease_id,
+                apartment_id=self.apartment_id,
+                category="General",
                 description=complaint_text,
-                status="Pending",
-                submitted_at=datetime.now()
-                
+                created_by_staff=False,
             )
-            session.add(complaint)
-            session.commit()
+        finally:
+            db.close()
 
-        messagebox.showinfo("Submitted", "Complaint submitted!")
-        #messagebox.askyesno
-
-        # Once Complaint goes through the text field resets
-        self.complaint_box.delete("1.0", tk.END)
+        if ok:
+            messagebox.showinfo("Submitted", "Complaint submitted.")
+            self.complaint_box.delete("1.0", tk.END)
+            self.show_complaints()
+        else:
+            messagebox.showerror("Error", "Failed to submit complaint.")
 
     def show_complaints(self):
         for row in self.complaints_table.get_children():
-            self.complaint_table.delete(row)
+            self.complaints_table.delete(row)
 
-        with get_session() as session:
-            complaints = session.query(Complaint).filter_by(tenant_id=self.tenant_id).all()
-            for c in complaints:
-                self.complaints_table.insert("", "end", values=(
-                    c.status,
-                    c.submitted_at.strftime("%Y-%m-%d %H:%M"),
-                    c.description
-                ))
+        db = SessionLocal()
+        service = ComplaintService(db)
+        try:
+            complaints = service.get_complaints_for_tenant(self.tenant_id)
+        finally:
+            db.close()
 
-    
-
-        
-
-        
+        for c in complaints:
+            self.complaints_table.insert(
+                "",
+                "end",
+                values=(
+                    c["status"],
+                    c["created_at"],
+                    c["description"],
+                ),
+            )

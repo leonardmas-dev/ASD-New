@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 from database.session import SessionLocal
 from backend.maintenance_service import MaintenanceService
 
@@ -22,7 +23,7 @@ class MaintenanceListPage(tk.Frame):
 
         self.tree.column("id", width=50)
         self.tree.column("tenant", width=150)
-        self.tree.column("apt", width=80)
+        self.tree.column("apt", width=150)
         self.tree.column("category", width=120)
         self.tree.column("priority", width=80)
         self.tree.column("status", width=100)
@@ -74,7 +75,7 @@ class MaintenanceListPage(tk.Frame):
                 values=(
                     r["request_id"],
                     r["tenant_name"],
-                    r["apartment_id"],
+                    r["apartment_label"],
                     r["category"],
                     r["priority"],
                     r["status"],
@@ -95,7 +96,7 @@ class MaintenanceListPage(tk.Frame):
             UpdateMaintenanceRequestPage,
             request_id=data[0],
             tenant_name=data[1],
-            apt_id=data[2],
+            apt_label=data[2],
             category=data[3],
             priority=data[4],
             status=data[5],

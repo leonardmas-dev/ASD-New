@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 from database.session import SessionLocal
 from backend.maintenance_service import MaintenanceService
 
@@ -14,29 +15,24 @@ class CreateMaintenanceRequestPage(tk.Frame):
         form = tk.Frame(self)
         form.pack(pady=10)
 
-        # tenant id
         tk.Label(form, text="Tenant ID:").grid(row=0, column=0, sticky="e", padx=10, pady=5)
         self.tenant_entry = tk.Entry(form)
         self.tenant_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        # apartment id
         tk.Label(form, text="Apartment ID:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
         self.apartment_entry = tk.Entry(form)
         self.apartment_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        # category
         tk.Label(form, text="Category:").grid(row=2, column=0, sticky="e", padx=10, pady=5)
         self.category_cb = ttk.Combobox(form, values=["Plumbing", "Electrical", "Heating", "General"])
         self.category_cb.set("General")
         self.category_cb.grid(row=2, column=1, padx=10, pady=5)
 
-        # priority
         tk.Label(form, text="Priority:").grid(row=3, column=0, sticky="e", padx=10, pady=5)
         self.priority_cb = ttk.Combobox(form, values=["Low", "Medium", "High"])
         self.priority_cb.set("Medium")
         self.priority_cb.grid(row=3, column=1, padx=10, pady=5)
 
-        # description
         tk.Label(form, text="Description:").grid(row=4, column=0, sticky="ne", padx=10, pady=5)
         self.desc_text = tk.Text(form, width=40, height=5)
         self.desc_text.grid(row=4, column=1, padx=10, pady=5)

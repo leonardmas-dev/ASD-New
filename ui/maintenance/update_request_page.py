@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 from database.session import SessionLocal
 from backend.maintenance_service import MaintenanceService
 
@@ -11,7 +12,7 @@ class UpdateMaintenanceRequestPage(tk.Frame):
         controller,
         request_id=None,
         tenant_name="",
-        apt_id=None,
+        apt_label="",
         category="",
         priority="",
         status="",
@@ -28,7 +29,9 @@ class UpdateMaintenanceRequestPage(tk.Frame):
 
         tk.Label(info, text=f"Request ID: {request_id}").pack(anchor="w")
         tk.Label(info, text=f"Tenant: {tenant_name}").pack(anchor="w")
-        tk.Label(info, text=f"Apartment: {apt_id}").pack(anchor="w")
+        tk.Label(info, text=f"Apartment: {apt_label}").pack(anchor="w")
+        tk.Label(info, text=f"Category: {category}").pack(anchor="w")
+        tk.Label(info, text=f"Priority: {priority}").pack(anchor="w")
 
         form = tk.LabelFrame(self, text="Update Details", padx=20, pady=10)
         form.pack(fill="x", padx=20, pady=10)

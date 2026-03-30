@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from database.models import MaintenanceRequest, Tenant, Apartment
+from database.models import MaintenanceRequest, Tenant, Apartment, Lease
 
 
 class MaintenanceService:
@@ -77,12 +77,19 @@ class MaintenanceService:
                         "tenant_id": req.tenant_id,
                         "tenant_name": f"{tenant.first_name} {tenant.last_name}",
                         "apartment_id": req.apartment_id,
+                        "apartment_label": f"{apt.city} - {apt.apartment_number}"
+                        if hasattr(apt, "city") and hasattr(apt, "apartment_number")
+                        else str(req.apartment_id),
                         "category": req.category,
                         "description": req.description,
                         "priority": req.priority,
                         "status": req.status,
-                        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M"),
-                        "resolved_at": req.resolved_at.strftime("%Y-%m-%d %H:%M") if req.resolved_at else None,
+                        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M")
+                        if req.created_at
+                        else "",
+                        "resolved_at": req.resolved_at.strftime("%Y-%m-%d %H:%M")
+                        if req.resolved_at
+                        else None,
                         "time_taken_hours": req.time_taken_hours,
                         "cost": req.cost,
                     }
@@ -115,8 +122,12 @@ class MaintenanceService:
                         "description": req.description,
                         "priority": req.priority,
                         "status": req.status,
-                        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M"),
-                        "resolved_at": req.resolved_at.strftime("%Y-%m-%d %H:%M") if req.resolved_at else None,
+                        "created_at": req.created_at.strftime("%Y-%m-%d %H:%M")
+                        if req.created_at
+                        else "",
+                        "resolved_at": req.resolved_at.strftime("%Y-%m-%d %H:%M")
+                        if req.resolved_at
+                        else None,
                     }
                 )
             return data
@@ -144,10 +155,11 @@ class MaintenanceService:
 
             req.status = status or req.status
             req.resolution_notes = resolution_notes or req.resolution_notes
-            req.time_taken_hours = time_taken_hours if time_taken_hours is not None else req.time_taken_hours
+            req.time_taken_hours = (
+                time_taken_hours if time_taken_hours is not None else req.time_taken_hours
+            )
             req.cost = cost if cost is not None else req.cost
 
-            # set resolved timestamp when marked completed
             if status == "Completed" and req.resolved_at is None:
                 req.resolved_at = datetime.now()
 

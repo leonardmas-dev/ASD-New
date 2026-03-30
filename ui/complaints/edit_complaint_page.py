@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 from database.session import SessionLocal
 from backend.complaint_service import ComplaintService
 
@@ -11,7 +12,7 @@ class EditComplaintPage(tk.Frame):
         controller,
         complaint_id=None,
         tenant_name="",
-        apt_id=None,
+        apt_label="",
         category="",
         status="",
         **kwargs,
@@ -22,16 +23,14 @@ class EditComplaintPage(tk.Frame):
 
         tk.Label(self, text="Update Complaint", font=("Arial", 18, "bold")).pack(pady=20)
 
-        # basic info
         info = tk.LabelFrame(self, text="Complaint Info", padx=20, pady=10)
         info.pack(fill="x", padx=20, pady=10)
 
         tk.Label(info, text=f"Complaint ID: {complaint_id}").pack(anchor="w")
         tk.Label(info, text=f"Tenant: {tenant_name}").pack(anchor="w")
-        tk.Label(info, text=f"Apartment: {apt_id}").pack(anchor="w")
+        tk.Label(info, text=f"Apartment: {apt_label}").pack(anchor="w")
         tk.Label(info, text=f"Category: {category}").pack(anchor="w")
 
-        # update fields
         form = tk.LabelFrame(self, text="Update Details", padx=20, pady=10)
         form.pack(fill="x", padx=20, pady=10)
 
@@ -44,7 +43,6 @@ class EditComplaintPage(tk.Frame):
         self.notes_text = tk.Text(form, width=40, height=5)
         self.notes_text.grid(row=1, column=1, padx=10, pady=5)
 
-        # buttons
         btns = tk.Frame(self)
         btns.pack(pady=20)
 

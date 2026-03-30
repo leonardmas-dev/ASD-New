@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+
 from database.session import SessionLocal
 from backend.complaint_service import ComplaintService
 
@@ -22,7 +23,7 @@ class ComplaintListPage(tk.Frame):
 
         self.tree.column("id", width=50)
         self.tree.column("tenant", width=150)
-        self.tree.column("apt", width=80)
+        self.tree.column("apt", width=150)
         self.tree.column("category", width=120)
         self.tree.column("status", width=100)
         self.tree.column("created", width=150)
@@ -73,7 +74,7 @@ class ComplaintListPage(tk.Frame):
                 values=(
                     r["complaint_id"],
                     r["tenant_name"],
-                    r["apartment_id"],
+                    r["apartment_label"],
                     r["category"],
                     r["status"],
                     r["created_at"],
@@ -93,7 +94,7 @@ class ComplaintListPage(tk.Frame):
             EditComplaintPage,
             complaint_id=data[0],
             tenant_name=data[1],
-            apt_id=data[2],
+            apt_label=data[2],
             category=data[3],
             status=data[4],
         )

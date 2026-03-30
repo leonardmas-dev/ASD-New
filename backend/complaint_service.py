@@ -3,7 +3,7 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from database.models import Complaint, Tenant, Apartment
+from database.models import Complaint, Tenant, Lease, Apartment
 
 
 class ComplaintService:
@@ -73,11 +73,18 @@ class ComplaintService:
                         "tenant_id": comp.tenant_id,
                         "tenant_name": f"{tenant.first_name} {tenant.last_name}",
                         "apartment_id": comp.apartment_id,
+                        "apartment_label": f"{apt.city} - {apt.apartment_number}"
+                        if hasattr(apt, "city") and hasattr(apt, "apartment_number")
+                        else str(comp.apartment_id),
                         "category": comp.category,
                         "description": comp.description,
                         "status": comp.status,
-                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M"),
-                        "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M") if comp.resolved_at else None,
+                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.created_at
+                        else "",
+                        "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.resolved_at
+                        else None,
                     }
                 )
             return data
@@ -107,8 +114,12 @@ class ComplaintService:
                         "category": comp.category,
                         "description": comp.description,
                         "status": comp.status,
-                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M"),
-                        "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M") if comp.resolved_at else None,
+                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.created_at
+                        else "",
+                        "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.resolved_at
+                        else None,
                     }
                 )
             return data
@@ -135,7 +146,6 @@ class ComplaintService:
             comp.status = status or comp.status
             comp.resolution_notes = resolution_notes or comp.resolution_notes
 
-            # set resolved timestamp when marked resolved
             if status == "Resolved" and comp.resolved_at is None:
                 comp.resolved_at = datetime.now()
 
