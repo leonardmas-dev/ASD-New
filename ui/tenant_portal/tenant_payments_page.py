@@ -6,7 +6,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from backend.payment_service import PaymentService
 
-
 class TenantPaymentGraphsPage(tk.Frame):
 
     def __init__(self, parent, main_window):

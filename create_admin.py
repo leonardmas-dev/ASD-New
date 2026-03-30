@@ -24,7 +24,7 @@ def create_admin():
     db.commit()
     db.close()
 
-    print("Admin created: username=admin, password=admin123")
+    print("Admin created: username=admin, password=admin")
 
 if __name__ == "__main__":
     create_admin()
