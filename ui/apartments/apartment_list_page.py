@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# Fix for "ModuleNotFoundError"
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from backend.apartment_service import get_all_apartments
@@ -27,7 +27,7 @@ class ApartmentListPage(tk.Frame):
         
         tk.Button(search_frame, text="Search", command=self.filter_apartments).pack(side="left")
 
-        # --- Table Section (Treeview) ---
+        #Table Section 
         tree_frame = tk.Frame(self)
         tree_frame.pack(fill="both", expand=True, padx=20, pady=10)
 
@@ -42,7 +42,7 @@ class ApartmentListPage(tk.Frame):
         self.tree.heading("rooms", text="Rooms")
         self.tree.heading("status", text="Status")
 
-        # Column Width Tuning 
+        # Column Width Adjustment
         self.tree.column("id", width=50, anchor="center")
         self.tree.column("rent", width=100, anchor="center")
 

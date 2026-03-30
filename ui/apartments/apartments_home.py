@@ -3,9 +3,9 @@ from ui.apartments.apartment_list_page import ApartmentListPage
 from ui.apartments.add_apartment_page import AddApartmentPage
 
 class ApartmentsHome(tk.Frame):
-    def __init__(self, parent, main_window): # Changed 'controller' to 'main_window'
+    def __init__(self, parent, main_window): # main_window
         super().__init__(parent)
-        self.main_window = main_window # Use the name your teammate's system expects
+        self.main_window = main_window 
 
         # Title Section
         tk.Label(self, text="Apartment Management Dashboard", font=("Arial", 20, "bold")).pack(pady=(40, 10))
@@ -15,7 +15,7 @@ class ApartmentsHome(tk.Frame):
         button_frame = tk.Frame(self)
         button_frame.pack(pady=10)
 
-        # 1. View List - Uses load_page instead of show_frame
+        # 1. View List 
         tk.Button(button_frame, text="View Apartment Inventory", 
         width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
         command=lambda: self.main_window.load_page(ApartmentListPage)).pack(pady=10)

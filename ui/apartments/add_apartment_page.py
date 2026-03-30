@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 import sys
 import os
 
-# Fix for "ModuleNotFoundError"
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 # Import backend and the Home page for navigation
