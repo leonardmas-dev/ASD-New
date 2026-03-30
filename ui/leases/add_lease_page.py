@@ -13,7 +13,7 @@ from backend.lease_service import create_lease
 class AddLeasePage(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller = controller
+        self.controller = controller # This is the main_window
 
         tk.Label(self, text="Create New Lease Agreement", font=("Arial", 18, "bold")).pack(pady=20)
 
@@ -52,10 +52,20 @@ class AddLeasePage(tk.Frame):
         self.duration_cb.set("12")
         self.duration_cb.grid(row=5, column=1, padx=10, pady=5)
 
+        # Button Container
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=30)
+
         # Submit Button
-        submit_btn = tk.Button(self, text="Generate Lease", bg="blue", fg="white", 
+        submit_btn = tk.Button(btn_frame, text="Generate Lease", bg="blue", fg="white", 
                                width=20, command=self.save_lease)
-        submit_btn.pack(pady=30)
+        submit_btn.pack(side="left", padx=10)
+
+        # Back Button
+        from ui.leases.leases_home import LeasesHome
+        back_btn = tk.Button(btn_frame, text="Back", bg="#95a5a6", fg="white", 
+                             width=15, command=lambda: self.controller.load_page(LeasesHome))
+        back_btn.pack(side="left", padx=10)
 
     def save_lease(self):
         # 1. Capture Data
@@ -77,6 +87,9 @@ class AddLeasePage(tk.Frame):
         if success:
             messagebox.showinfo("Success", f"Lease created! Apartment {apt_id} status updated to Occupied.")
             self.clear_fields()
+            # Redirect back to lease list after success
+            from ui.leases.lease_list_page import LeaseListPage
+            self.controller.load_page(LeaseListPage)
         else:
             messagebox.showerror("Database Error", "Failed to save lease. Ensure IDs exist and data is valid.")
 
@@ -85,11 +98,3 @@ class AddLeasePage(tk.Frame):
         self.apt_entry.delete(0, tk.END)
         self.rent_entry.delete(0, tk.END)
         self.deposit_entry.delete(0, tk.END)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("PAMS - New Lease")
-    root.geometry("450x550")
-    app = AddLeasePage(root, None)
-    app.pack(expand=True, fill="both")
-    root.mainloop()

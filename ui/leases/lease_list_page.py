@@ -51,10 +51,15 @@ class LeaseListPage(tk.Frame):
         
         tk.Button(btn_frame, text="Refresh Leases", command=self.load_leases, width=15).pack(side="left", padx=10)
         
-        # This button now triggers the 5% penalty logic
+        # Termination button
         tk.Button(btn_frame, text="Early Termination", 
                   bg="#e67e22", fg="white", width=20, 
                   command=self.process_termination).pack(side="left", padx=10)
+
+        # Back Button
+        from ui.leases.leases_home import LeasesHome
+        tk.Button(btn_frame, text="Back", bg="#95a5a6", fg="white", width=15,
+                  command=lambda: self.controller.load_page(LeasesHome)).pack(side="left", padx=10)
 
         # Initial data load
         self.load_leases()
@@ -66,7 +71,6 @@ class LeaseListPage(tk.Frame):
 
         leases = get_all_leases() # Real backend call
         for l in leases:
-            # We show the tenant name (joined from tenant table in backend)
             tenant_name = f"{l['first_name']} {l['last_name']}"
             
             self.tree.insert("", "end", values=(
@@ -100,7 +104,6 @@ class LeaseListPage(tk.Frame):
                 messagebox.showerror("Error", "Could not process termination.")
 
     def filter_leases(self):
-        # Local UI filtering logic
         query = self.search_entry.get().lower()
         if not query:
             self.load_leases()
