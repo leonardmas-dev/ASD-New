@@ -1,5 +1,4 @@
 import tkinter as tk
-# We need to import the classes so the teammate's 'load_page' can find them
 from ui.apartments.apartment_list_page import ApartmentListPage
 from ui.apartments.add_apartment_page import AddApartmentPage
 
