@@ -1,90 +1,97 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from database.session import SessionLocal
 from backend.maintenance_service import MaintenanceService
+from database.session import get_session
+from database.models import Tenant, Apartment, Lease
 
 
-class CreateMaintenanceRequestPage(tk.Frame):
-    def __init__(self, parent, controller):
+class CreateRequestPage(tk.Frame):
+    """Staff creates a maintenance request."""
+
+    def __init__(self, parent, main_window):
         super().__init__(parent)
-        self.controller = controller  # main_window
 
-        tk.Label(self, text="Create Maintenance Request", font=("Arial", 18, "bold")).pack(pady=20)
+        tk.Label(self, text="Create Maintenance Request", font=("Arial", 22)).pack(pady=20)
 
         form = tk.Frame(self)
         form.pack(pady=10)
 
-        tk.Label(form, text="Tenant ID:").grid(row=0, column=0, sticky="e", padx=10, pady=5)
-        self.tenant_entry = tk.Entry(form)
-        self.tenant_entry.grid(row=0, column=1, padx=10, pady=5)
+        tk.Label(form, text="Tenant:").grid(row=0, column=0, sticky="e")
+        self.tenant_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.tenant_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form, text="Apartment ID:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
-        self.apartment_entry = tk.Entry(form)
-        self.apartment_entry.grid(row=1, column=1, padx=10, pady=5)
+        tk.Label(form, text="Apartment:").grid(row=1, column=0, sticky="e")
+        self.apartment_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.apartment_combo.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Label(form, text="Category:").grid(row=2, column=0, sticky="e", padx=10, pady=5)
-        self.category_cb = ttk.Combobox(form, values=["Plumbing", "Electrical", "Heating", "General"])
-        self.category_cb.set("General")
-        self.category_cb.grid(row=2, column=1, padx=10, pady=5)
+        tk.Label(form, text="Description:").grid(row=2, column=0, sticky="e")
+        self.desc_entry = tk.Entry(form, width=40)
+        self.desc_entry.grid(row=2, column=1, padx=5, pady=5)
 
-        tk.Label(form, text="Priority:").grid(row=3, column=0, sticky="e", padx=10, pady=5)
-        self.priority_cb = ttk.Combobox(form, values=["Low", "Medium", "High"])
-        self.priority_cb.set("Medium")
-        self.priority_cb.grid(row=3, column=1, padx=10, pady=5)
+        tk.Label(form, text="Priority:").grid(row=3, column=0, sticky="e")
+        self.priority_combo = ttk.Combobox(form, values=["Low", "Medium", "High"], state="readonly")
+        self.priority_combo.grid(row=3, column=1, padx=5, pady=5)
+        self.priority_combo.set("Medium")
 
-        tk.Label(form, text="Description:").grid(row=4, column=0, sticky="ne", padx=10, pady=5)
-        self.desc_text = tk.Text(form, width=40, height=5)
-        self.desc_text.grid(row=4, column=1, padx=10, pady=5)
+        tk.Button(self, text="Create Request", command=self.save).pack(pady=15)
 
-        btns = tk.Frame(self)
-        btns.pack(pady=20)
+        self._load_dropdowns()
 
-        tk.Button(
-            btns,
-            text="Submit Request",
-            bg="green",
-            fg="white",
-            width=18,
-            command=self.submit_request,
-        ).pack(side="left", padx=10)
+    def _load_dropdowns(self):
+        db = get_session()
 
-        from ui.maintenance.maintenance_list_page import MaintenanceListPage
-        tk.Button(
-            btns,
-            text="Back",
-            width=12,
-            command=lambda: self.controller.load_page(MaintenanceListPage),
-        ).pack(side="left", padx=10)
+        tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
+        apartments = db.query(Apartment).filter(Apartment.is_active == True).all()
 
-    def submit_request(self):
-        tenant_id = self.tenant_entry.get()
-        apt_id = self.apartment_entry.get()
-        category = self.category_cb.get()
-        priority = self.priority_cb.get()
-        description = self.desc_text.get("1.0", tk.END).strip()
+        db.close()
 
-        if not tenant_id or not apt_id or not description:
-            messagebox.showerror("Error", "Tenant, Apartment, and Description are required.")
+        self.tenant_map = {f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id for t in tenants}
+        self.apartment_map = {
+            f"{a.apartment_id} - {a.location.city}": a.apartment_id for a in apartments
+        }
+
+        self.tenant_combo["values"] = list(self.tenant_map.keys())
+        self.apartment_combo["values"] = list(self.apartment_map.keys())
+
+    def save(self):
+        desc = self.desc_entry.get().strip()
+        if not desc:
+            messagebox.showerror("Error", "Enter a description.")
             return
 
-        db = SessionLocal()
-        service = MaintenanceService(db)
         try:
-            ok = service.create_request(
-                int(tenant_id),
-                int(apt_id),
-                category,
-                description,
-                priority,
-                created_by_staff=True,
+            tenant_id = self.tenant_map[self.tenant_combo.get()]
+            apartment_id = self.apartment_map[self.apartment_combo.get()]
+            priority = self.priority_combo.get()
+        except Exception:
+            messagebox.showerror("Error", "Invalid selection.")
+            return
+
+        db = get_session()
+
+        # ensure tenant has an active lease for that apartment
+        lease = (
+            db.query(Lease)
+            .filter(
+                Lease.tenant_id == tenant_id,
+                Lease.apartment_id == apartment_id,
+                Lease.is_active == True,
             )
-        finally:
+            .first()
+        )
+
+        if not lease:
+            messagebox.showerror("Error", "Tenant has no active lease for this apartment.")
             db.close()
+            return
+
+        service = MaintenanceService(db)
+        ok = service.create_request(tenant_id, apartment_id, desc, priority)
+
+        db.close()
 
         if ok:
-            messagebox.showinfo("Success", "Maintenance request created.")
-            from ui.maintenance.maintenance_list_page import MaintenanceListPage
-            self.controller.load_page(MaintenanceListPage)
+            messagebox.showinfo("Success", "Request created.")
         else:
             messagebox.showerror("Error", "Failed to create request.")

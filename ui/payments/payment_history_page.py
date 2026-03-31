@@ -1,87 +1,88 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 
 from backend.payment_service import PaymentService
+from database.session import get_session
+from database.models import Tenant
 
 
 class PaymentHistoryPage(tk.Frame):
-    """
-    Finance Manager page to view payment history per lease.
-    """
+    """Staff view of payment history for a selected tenant."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+
         self.main_window = main_window
 
-        tk.Label(self, text="Payment History", font=("Arial", 18, "bold")).pack(pady=10)
+        tk.Label(self, text="Payment History", font=("Arial", 22)).pack(pady=20)
 
-        self.service = PaymentService()
+        top = tk.Frame(self)
+        top.pack(pady=5)
 
-        # lease selection
-        lease_frame = tk.Frame(self)
-        lease_frame.pack(pady=10, fill="x")
+        tk.Label(top, text="Tenant:").pack(side="left", padx=5)
 
-        tk.Label(lease_frame, text="Select Lease").grid(row=0, column=0, sticky="w")
+        self.tenant_combo = ttk.Combobox(top, state="readonly", width=30)
+        self.tenant_combo.pack(side="left", padx=5)
 
-        self.lease_box = ttk.Combobox(lease_frame, width=60, state="readonly")
-        self.lease_box.grid(row=0, column=1, padx=5)
-
-        self.leases = self.service.get_active_leases()
-        lease_display = []
-        for l in self.leases:
-            tenant = l.tenant
-            apt = l.apartment
-            loc = apt.location
-            label = f"Lease #{l.lease_id} - {tenant.first_name} {tenant.last_name} - {loc.city} - Apt {apt.apartment_id}"
-            lease_display.append(label)
-        self.lease_box["values"] = lease_display
-
-        tk.Button(lease_frame, text="Load History", command=self.load_history).grid(row=0, column=2, padx=5)
-
-        # table
-        table_frame = tk.Frame(self)
-        table_frame.pack(fill="both", expand=True, pady=10)
+        tk.Button(top, text="Load", command=self.load_history).pack(side="left", padx=5)
 
         self.table = ttk.Treeview(
-            table_frame,
-            columns=("due", "paid", "status", "late", "late_fee"),
+            self,
+            columns=("amount_due", "amount_paid", "due_date", "payment_date", "status", "late_fee"),
             show="headings",
-            height=15,
         )
+        for col, text in [
+            ("amount_due", "Amount Due"),
+            ("amount_paid", "Amount Paid"),
+            ("due_date", "Due Date"),
+            ("payment_date", "Payment Date"),
+            ("status", "Status"),
+            ("late_fee", "Late Fee"),
+        ]:
+            self.table.heading(col, text=text)
 
-        self.table.heading("due", text="Due (£)")
-        self.table.heading("paid", text="Paid (£)")
-        self.table.heading("status", text="Status")
-        self.table.heading("late", text="Late?")
-        self.table.heading("late_fee", text="Late Fee (£)")
+        self.table.pack(fill="both", expand=True, pady=10)
 
-        self.table.pack(fill="both", expand=True)
+        self._load_tenants()
 
-        from ui.payments.payments_home import PaymentsHome
-        tk.Button(self, text="Back", command=lambda: main_window.load_page(PaymentsHome)).pack(pady=10)
+    def _load_tenants(self):
+        db = get_session()
+        tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
+        db.close()
+
+        self.tenant_map = {}
+        names = []
+        for t in tenants:
+            name = f"{t.tenant_id} - {t.first_name} {t.last_name}"
+            names.append(name)
+            self.tenant_map[name] = t.tenant_id
+
+        self.tenant_combo["values"] = names
 
     def load_history(self):
-        idx = self.lease_box.current()
-        if idx == -1:
-            messagebox.showerror("Error", "Please select a lease")
+        sel = self.tenant_combo.get()
+        if not sel:
             return
 
-        lease = self.leases[idx]
+        tenant_id = self.tenant_map[sel]
 
-        for row in self.table.get_children():
-            self.table.delete(row)
+        db = get_session()
+        service = PaymentService(db)
+        rows = service.get_payments_for_tenant(tenant_id)
+        db.close()
 
-        payments = self.service.get_payment_history_for_lease(lease.lease_id)
+        self.table.delete(*self.table.get_children())
 
-        for p in payments:
+        for r in rows:
             self.table.insert(
                 "",
                 "end",
                 values=(
-                    p.amount_due,
-                    p.amount_paid,
-                    p.status,
-                    "Yes" if p.is_late else "No",
-                    p.late_fee or 0,
+                    r["amount_due"],
+                    r["amount_paid"],
+                    r["due_date"],
+                    r["payment_date"],
+                    r["status"],
+                    r["late_fee"],
                 ),
             )

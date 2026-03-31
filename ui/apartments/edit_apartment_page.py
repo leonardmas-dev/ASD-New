@@ -1,126 +1,103 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import sys
-import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
+from database.session import get_session
+from database.models import Apartment, Location
 
-from database.session import SessionLocal
-from backend.apartment_service import ApartmentService
+APARTMENT_TYPES = [
+    "Studio",
+    "1-Bed",
+    "2-Bed",
+    "3-Bed",
+    "4-Bed",
+    "Penthouse",
+    "Accessible Unit",
+    "Luxury Unit",
+]
 
 
 class EditApartmentPage(tk.Frame):
-    def __init__(
-        self,
-        parent,
-        controller,
-        apt_id=None,
-        location="",
-        apt_type="",
-        rent="",
-        status="",
-        **kwargs,
-    ):
+    """Edit an existing apartment."""
+
+    def __init__(self, parent, main_window, apartment_id):
         super().__init__(parent)
-        self.controller = controller
-        self.current_apt_id = apt_id
 
-        tk.Label(self, text="Edit Apartment Details", font=("Arial", 18, "bold")).pack(pady=20)
+        self.apartment_id = apartment_id
 
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
+        tk.Label(self, text="Edit Apartment", font=("Arial", 22)).pack(pady=20)
 
-        tk.Label(form_frame, text="Location:").grid(row=0, column=0, sticky="e", padx=10, pady=5)
-        self.location_cb = ttk.Combobox(form_frame, values=["Bristol", "Cardiff", "London", "Manchester"])
-        self.location_cb.grid(row=0, column=1, padx=10, pady=5)
-        self.location_cb.set(location)
+        form = tk.Frame(self)
+        form.pack(pady=10)
 
-        tk.Label(form_frame, text="Type:").grid(row=1, column=0, sticky="e", padx=10, pady=5)
-        self.type_cb = ttk.Combobox(form_frame, values=["Studio", "1-Bedroom", "2-Bedroom", "Penthouse"])
-        self.type_cb.grid(row=1, column=1, padx=10, pady=5)
-        self.type_cb.set(apt_type)
+        # Apartment Type
+        tk.Label(form, text="Apartment Type:").grid(row=0, column=0, sticky="e")
+        self.type_combo = ttk.Combobox(form, values=APARTMENT_TYPES, state="readonly")
+        self.type_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Monthly Rent (£):").grid(row=2, column=0, sticky="e", padx=10, pady=5)
-        self.rent_entry = tk.Entry(form_frame)
-        self.rent_entry.grid(row=2, column=1, padx=10, pady=5)
-        self.rent_entry.insert(0, str(rent).replace('£', ''))
+        # Monthly Rent
+        tk.Label(form, text="Monthly Rent (£):").grid(row=1, column=0, sticky="e")
+        self.rent_entry = tk.Entry(form)
+        self.rent_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Status:").grid(row=3, column=0, sticky="e", padx=10, pady=5)
-        self.status_cb = ttk.Combobox(form_frame, values=["Available", "Occupied", "Maintenance"])
-        self.status_cb.grid(row=3, column=1, padx=10, pady=5)
-        self.status_cb.set(status)
+        # Number of Rooms
+        tk.Label(form, text="Number of Rooms:").grid(row=2, column=0, sticky="e")
+        self.rooms_entry = tk.Entry(form)
+        self.rooms_entry.grid(row=2, column=1, padx=5, pady=5)
 
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=30)
+        # Floor Number
+        tk.Label(form, text="Floor Number:").grid(row=3, column=0, sticky="e")
+        self.floor_entry = tk.Entry(form)
+        self.floor_entry.grid(row=3, column=1, padx=5, pady=5)
 
-        from ui.apartments.apartment_list_page import ApartmentListPage
+        # Availability
+        tk.Label(form, text="Available:").grid(row=4, column=0, sticky="e")
+        self.available_combo = ttk.Combobox(form, values=["Yes", "No"], state="readonly")
+        self.available_combo.grid(row=4, column=1, padx=5, pady=5)
 
-        tk.Button(
-            btn_frame,
-            text="Update Apartment",
-            bg="#f39c12",
-            fg="white",
-            width=15,
-            command=self.update_data,
-        ).pack(side="left", padx=10)
+        # Active
+        tk.Label(form, text="Active:").grid(row=5, column=0, sticky="e")
+        self.active_combo = ttk.Combobox(form, values=["Yes", "No"], state="readonly")
+        self.active_combo.grid(row=5, column=1, padx=5, pady=5)
 
-        tk.Button(
-            btn_frame,
-            text="Delete Record",
-            bg="#e74c3c",
-            fg="white",
-            width=15,
-            command=self.confirm_delete,
-        ).pack(side="left", padx=10)
+        tk.Button(self, text="Save Changes", command=self.save).pack(pady=15)
 
-        tk.Button(
-            btn_frame,
-            text="Cancel",
-            command=lambda: self.controller.load_page(ApartmentListPage),
-        ).pack(side="left", padx=10)
+        self.load_data()
 
-    def update_data(self):
-        if not self.current_apt_id:
-            return
+    def load_data(self):
+        db = get_session()
+        apt = db.query(Apartment).filter(Apartment.apartment_id == self.apartment_id).first()
+        db.close()
 
-        db = SessionLocal()
-        service = ApartmentService(db)
+        self.type_combo.set(apt.apartment_type)
+        self.rent_entry.insert(0, apt.monthly_rent)
+        self.rooms_entry.insert(0, apt.num_rooms)
+        self.floor_entry.insert(0, apt.floor_number)
+        self.available_combo.set("Yes" if apt.is_available else "No")
+        self.active_combo.set("Yes" if apt.is_active else "No")
+
+    def save(self):
         try:
-            success = service.update_apartment(
-                self.current_apt_id,
-                self.location_cb.get(),
-                self.type_cb.get(),
-                self.rent_entry.get(),
-                self.status_cb.get(),
-            )
-        finally:
-            db.close()
-
-        if success:
-            messagebox.showinfo("Success", "Apartment details updated.")
-            from ui.apartments.apartment_list_page import ApartmentListPage
-            self.controller.load_page(ApartmentListPage)
-        else:
-            messagebox.showerror("Error", "Failed to update database.")
-
-    def confirm_delete(self):
-        if not self.current_apt_id:
+            apt_type = self.type_combo.get()
+            rent = int(self.rent_entry.get())
+            rooms = int(self.rooms_entry.get())
+            floor = int(self.floor_entry.get())
+            available = self.available_combo.get() == "Yes"
+            active = self.active_combo.get() == "Yes"
+        except Exception:
+            messagebox.showerror("Error", "Invalid input.")
             return
 
-        answer = messagebox.askyesno("Confirm Delete", "Are you sure you want to remove this apartment?")
-        if not answer:
-            return
+        db = get_session()
+        apt = db.query(Apartment).filter(Apartment.apartment_id == self.apartment_id).first()
 
-        db = SessionLocal()
-        service = ApartmentService(db)
-        try:
-            success = service.delete_apartment(self.current_apt_id)
-        finally:
-            db.close()
+        apt.apartment_type = apt_type
+        apt.monthly_rent = rent
+        apt.num_rooms = rooms
+        apt.floor_number = floor
+        apt.is_available = available
+        apt.is_active = active
 
-        if success:
-            messagebox.showinfo("Deleted", "Apartment removed from system.")
-            from ui.apartments.apartment_list_page import ApartmentListPage
-            self.controller.load_page(ApartmentListPage)
-        else:
-            messagebox.showerror("Error", "Could not delete from database.")
+        db.commit()
+        db.close()
+
+        messagebox.showinfo("Success", "Apartment updated.")

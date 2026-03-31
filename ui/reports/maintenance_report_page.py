@@ -1,56 +1,36 @@
 import tkinter as tk
 from tkinter import ttk
+
 from backend.report_service import ReportService
+from database.session import get_session
 
 
 class MaintenanceReportPage(tk.Frame):
+    """Shows maintenance statistics."""
+
     def __init__(self, parent, main_window):
         super().__init__(parent)
-        self.main_window = main_window
 
-        tk.Label(self, text="Maintenance Report", font=("Arial", 18, "bold")).pack(pady=10)
+        tk.Label(self, text="Maintenance Report", font=("Arial", 22)).pack(pady=20)
 
-        filter_frame = tk.Frame(self)
-        filter_frame.pack(pady=5)
+        db = get_session()
+        service = ReportService(db)
+        data = service.get_maintenance_summary()
+        db.close()
 
-        tk.Label(filter_frame, text="City").grid(row=0, column=0)
-        self.city_box = ttk.Combobox(filter_frame, width=20)
-        self.city_box.grid(row=0, column=1, padx=5)
-        self.city_box["values"] = ["All"] + ReportService.get_cities()
-        self.city_box.set("All")
+        frame = tk.Frame(self)
+        frame.pack(pady=10)
 
-        tk.Button(filter_frame, text="Refresh", command=self.load_data).grid(row=0, column=2, padx=5)
+        rows = [
+            ("Total Requests", data["total_requests"]),
+            ("Completed Requests", data["completed"]),
+            ("Pending Requests", data["pending"]),
+            ("Average Completion Time (hrs)", data["avg_time"]),
+            ("Total Maintenance Cost", f"£{data['total_cost']}"),
+        ]
 
-        table_frame = tk.Frame(self)
-        table_frame.pack(fill="both", expand=True)
-
-        self.table = ttk.Treeview(
-            table_frame,
-            columns=("apt", "city", "count", "total_cost"),
-            show="headings",
-            height=12
-        )
-
-        self.table.heading("apt", text="Apartment ID")
-        self.table.heading("city", text="City")
-        self.table.heading("count", text="Requests")
-        self.table.heading("total_cost", text="Total Cost (£)")
-
-        self.table.pack(fill="both", expand=True)
-
-        from ui.reports.reports_home import ReportsHomePage
-        tk.Button(self, text="Back", command=lambda: main_window.load_page(ReportsHomePage)).pack(pady=10)
-
-        self.load_data()
-
-    def load_data(self):
-        for row in self.table.get_children():
-            self.table.delete(row)
-
-        city = self.city_box.get()
-        rows = ReportService.get_maintenance_summary(None if city == "All" else city)
-
-        for r in rows:
-            self.table.insert("", "end", values=(
-                r["apartment_id"], r["city"], r["count"], r["total_cost"]
-            ))
+        for label, value in rows:
+            row = tk.Frame(frame)
+            row.pack(anchor="w", pady=3)
+            tk.Label(row, text=f"{label}: ", font=("Arial", 12, "bold")).pack(side="left")
+            tk.Label(row, text=value, font=("Arial", 12)).pack(side="left")

@@ -4,6 +4,8 @@ from backend.user_service import UserService
 
 
 class UsersHomePage(tk.Frame):
+    """Staff user management home page."""
+
     def __init__(self, parent, main_window):
         super().__init__(parent)
         self.main_window = main_window
@@ -52,7 +54,7 @@ class UsersHomePage(tk.Frame):
         for u in users:
             name = f"{u.first_name} {u.last_name}"
             status = "Active" if u.is_active else "Inactive"
-            location = u.location.city if u.location else "N/A"
+            location = u.location.name if u.location else "N/A"
 
             self.table.insert(
                 "",

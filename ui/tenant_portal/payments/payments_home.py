@@ -2,15 +2,10 @@ import tkinter as tk
 
 
 class PaymentsHome(tk.Frame):
-    """
-    Module home page for tenant payments.
-    Provides entry points for making payments, viewing history, and viewing graphs.
-    """
+    """Tenant payments module home page."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
-
-        # Store reference to main window
         self.main_window = main_window
 
         tk.Label(self, text="Payments", font=("Arial", 18, "bold")).pack(pady=20)
@@ -19,6 +14,7 @@ class PaymentsHome(tk.Frame):
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=20)
 
+        # make payment
         tk.Button(
             btn_frame,
             text="Make a Payment",
@@ -26,6 +22,7 @@ class PaymentsHome(tk.Frame):
             command=self.open_make_payment,
         ).grid(row=0, column=0, padx=10, pady=5)
 
+        # payment history
         tk.Button(
             btn_frame,
             text="Payment History",
@@ -33,6 +30,7 @@ class PaymentsHome(tk.Frame):
             command=self.open_history,
         ).grid(row=0, column=1, padx=10, pady=5)
 
+        # payment graphs
         tk.Button(
             btn_frame,
             text="Payment Graphs",
@@ -40,14 +38,14 @@ class PaymentsHome(tk.Frame):
             command=self.open_graphs,
         ).grid(row=1, column=0, columnspan=2, padx=10, pady=5)
 
-        # Back to dashboard
+        # back to dashboard
         tk.Button(
             self,
             text="Back to Dashboard",
             command=self.go_home,
         ).pack(pady=20)
 
-    # --- Navigation Handlers ---
+    # --- navigation handlers ---
 
     def open_make_payment(self):
         from ui.tenant_portal.payments.payment_make import TenantPaymentsMakePage
@@ -62,5 +60,5 @@ class PaymentsHome(tk.Frame):
         self.main_window.load_page(TenantPaymentGraphsPage)
 
     def go_home(self):
-        from ui.tenant_portal.dashboard.tenant_dashboard import TenantDashboard
+        from ui.tenant_portal.tenant_dashboard import TenantDashboard
         self.main_window.load_page(TenantDashboard)

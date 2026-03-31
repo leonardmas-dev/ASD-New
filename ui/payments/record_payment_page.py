@@ -1,120 +1,90 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
 
 from backend.payment_service import PaymentService
+from database.session import get_session
+from database.models import Payment, Lease, Tenant, Apartment
 
 
 class RecordPaymentPage(tk.Frame):
-    """
-    Finance Manager page to record a payment for a lease.
-    """
+    """Staff records a payment against an existing payment record."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+
         self.main_window = main_window
 
-        tk.Label(self, text="Record Payment", font=("Arial", 18, "bold")).pack(pady=10)
+        tk.Label(self, text="Record Payment", font=("Arial", 22)).pack(pady=20)
 
-        self.service = PaymentService()
+        top = tk.Frame(self)
+        top.pack(pady=5)
 
-        # lease selection
-        lease_frame = tk.Frame(self)
-        lease_frame.pack(pady=10, fill="x")
+        tk.Label(top, text="Select Payment:").pack(side="left", padx=5)
 
-        tk.Label(lease_frame, text="Select Lease").grid(row=0, column=0, sticky="w")
+        self.payment_combo = ttk.Combobox(top, state="readonly", width=60)
+        self.payment_combo.pack(side="left", padx=5)
 
-        self.lease_box = ttk.Combobox(lease_frame, width=60, state="readonly")
-        self.lease_box.grid(row=0, column=1, padx=5)
+        tk.Button(top, text="Load", command=self._load_selected).pack(side="left", padx=5)
 
-        self.leases = self.service.get_active_leases()
-        lease_display = []
-        for l in self.leases:
-            tenant = l.tenant
-            apt = l.apartment
-            loc = apt.location
-            label = f"Lease #{l.lease_id} - {tenant.first_name} {tenant.last_name} - {loc.city} - Apt {apt.apartment_id}"
-            lease_display.append(label)
-        self.lease_box["values"] = lease_display
+        form = tk.Frame(self)
+        form.pack(pady=15)
 
-        # amount + due date
-        form_frame = tk.Frame(self)
-        form_frame.pack(pady=10)
+        tk.Label(form, text="Amount to Record:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        self.amount_entry = tk.Entry(form)
+        self.amount_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form_frame, text="Amount Due (£)").grid(row=0, column=0, sticky="w")
-        self.amount_due_entry = tk.Entry(form_frame)
-        self.amount_due_entry.grid(row=0, column=1, padx=5, pady=5)
+        tk.Button(self, text="Save Payment", command=self.save_payment).pack(pady=10)
 
-        tk.Label(form_frame, text="Amount Paid (£)").grid(row=1, column=0, sticky="w")
-        self.amount_paid_entry = tk.Entry(form_frame)
-        self.amount_paid_entry.grid(row=1, column=1, padx=5, pady=5)
+        self._load_payments()
 
-        tk.Label(form_frame, text="Due Date (YYYY-MM-DD)").grid(row=2, column=0, sticky="w")
-        self.due_date_entry = tk.Entry(form_frame)
-        self.due_date_entry.grid(row=2, column=1, padx=5, pady=5)
-
-        tk.Label(form_frame, text="Payment Date (optional, YYYY-MM-DD)").grid(row=3, column=0, sticky="w")
-        self.payment_date_entry = tk.Entry(form_frame)
-        self.payment_date_entry.grid(row=3, column=1, padx=5, pady=5)
-
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=15)
-
-        tk.Button(btn_frame, text="Save Payment", command=self.save_payment).grid(row=0, column=0, padx=5)
-
-        from ui.payments.payments_home import PaymentsHome
-        tk.Button(btn_frame, text="Back", command=lambda: main_window.load_page(PaymentsHome)).grid(
-            row=0, column=1, padx=5
+    def _load_payments(self):
+        db = get_session()
+        rows = (
+            db.query(Payment, Lease, Tenant, Apartment)
+            .join(Lease, Payment.lease_id == Lease.lease_id)
+            .join(Tenant, Lease.tenant_id == Tenant.tenant_id)
+            .join(Apartment, Lease.apartment_id == Apartment.apartment_id)
+            .all()
         )
+        db.close()
+
+        self.payment_map = {}
+        labels = []
+        for pay, lease, tenant, apt in rows:
+            label = (
+                f"ID {pay.payment_id} | {tenant.first_name} {tenant.last_name} | "
+                f"Due £{pay.amount_due} on {pay.due_date.strftime('%Y-%m-%d')} | Status {pay.status}"
+            )
+            labels.append(label)
+            self.payment_map[label] = pay.payment_id
+
+        self.payment_combo["values"] = labels
+
+    def _load_selected(self):
+        # kept simple: just focuses on amount entry; details already in combo text
+        pass
 
     def save_payment(self):
-        # validate lease selection
-        idx = self.lease_box.current()
-        if idx == -1:
-            messagebox.showerror("Error", "Please select a lease")
+        sel = self.payment_combo.get()
+        if not sel:
+            messagebox.showerror("Error", "Please select a payment.")
             return
 
-        lease = self.leases[idx]
-
-        # validate numeric fields
         try:
-            amount_due = int(self.amount_due_entry.get().strip())
-            amount_paid = int(self.amount_paid_entry.get().strip())
+            amount = int(self.amount_entry.get().strip())
         except ValueError:
-            messagebox.showerror("Error", "Amounts must be whole numbers")
+            messagebox.showerror("Error", "Enter a valid amount.")
             return
 
-        # parse dates
-        try:
-            due_date_str = self.due_date_entry.get().strip()
-            due_date = datetime.strptime(due_date_str, "%Y-%m-%d")
-        except ValueError:
-            messagebox.showerror("Error", "Invalid due date format")
-            return
+        payment_id = self.payment_map[sel]
 
-        payment_date = None
-        payment_date_str = self.payment_date_entry.get().strip()
-        if payment_date_str:
-            try:
-                payment_date = datetime.strptime(payment_date_str, "%Y-%m-%d")
-            except ValueError:
-                messagebox.showerror("Error", "Invalid payment date format")
-                return
+        db = get_session()
+        service = PaymentService(db)
+        ok = service.record_payment(payment_id, amount)
+        db.close()
 
-        # record payment
-        payment = self.service.record_payment(
-            lease_id=lease.lease_id,
-            amount_due=amount_due,
-            amount_paid=amount_paid,
-            due_date=due_date,
-            payment_date=payment_date,
-        )
-
-        # simple alert for late payments
-        if payment.is_late:
-            messagebox.showwarning(
-                "Late Payment",
-                f"Payment marked as LATE.\nLate fee applied: £{payment.late_fee}",
-            )
+        if ok:
+            messagebox.showinfo("Success", "Payment recorded.")
+            self._load_payments()
         else:
-            messagebox.showinfo("Success", "Payment recorded successfully")
+            messagebox.showerror("Error", "Failed to record payment.")

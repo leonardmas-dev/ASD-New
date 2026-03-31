@@ -1,52 +1,49 @@
 import tkinter as tk
 from tkinter import ttk
-from backend.tenant_service import fetch_tenants
+
+from database.session import get_session
+from database.models import Tenant
 
 
-class TenantList(tk.Frame):
+class TenantListPage(tk.Frame):
+    """List of tenants for selection."""
+
     def __init__(self, parent, main_window):
         super().__init__(parent)
-        self.main_window = main_window
 
-        tenant_list_title = tk.Label(self, text="Tenant Information")
-        tenant_list_title.pack()
+        tk.Label(self, text="Select Tenant", font=("Arial", 22)).pack(pady=20)
 
-        columns = ("Tenant ID", "First Name", "Last Name", "Phone", "Email", "Apartment")
-        self.tree = ttk.Treeview(self, columns=columns, show="headings")
+        self.table = ttk.Treeview(
+            self,
+            columns=("id", "name", "email", "active"),
+            show="headings",
+        )
 
-        for col in columns:
-            self.tree.heading(col, text=col)
-            self.tree.column(col, width=100)
+        for col, text in [
+            ("id", "ID"),
+            ("name", "Name"),
+            ("email", "Email"),
+            ("active", "Active"),
+        ]:
+            self.table.heading(col, text=text)
 
-        self.tree.pack(fill="both", expand=True)
-
-        scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
+        self.table.pack(fill="both", expand=True, pady=10)
 
         self.load_data()
 
-        go_homebtn = tk.Button(self, text="Go Home", command=self.go_home)
-        go_homebtn.pack(pady=10)
-
     def load_data(self):
-        for row in self.tree.get_children():
-            self.tree.delete(row)
+        db = get_session()
+        tenants = db.query(Tenant).all()
+        db.close()
 
-        for tenant in fetch_tenants():
-            self.tree.insert(
+        for t in tenants:
+            self.table.insert(
                 "",
                 "end",
                 values=(
-                    tenant.tenant_id,
-                    tenant.first_name,
-                    tenant.last_name,
-                    tenant.phone,
-                    tenant.email,
-                    tenant.location_id
-                )
+                    t.tenant_id,
+                    f"{t.first_name} {t.last_name}",
+                    t.email,
+                    "Yes" if t.is_active else "No",
+                ),
             )
-
-    def go_home(self):
-        from ui.tenants.tenants_home import TenantsHome
-        self.main_window.load_page(TenantsHome)

@@ -1,29 +1,100 @@
 import tkinter as tk
-# Import the actual classes for the teammate's load_page system
-from ui.leases.lease_list_page import LeaseListPage
-from ui.leases.add_lease_page import AddLeasePage
+from tkinter import ttk
+from database.session import get_session
+from database.models import Lease, Tenant, Apartment, Location
 
 class LeasesHome(tk.Frame):
-    def __init__(self, parent, controller):
+    """Staff overview of all leases."""
+
+    def __init__(self, parent, main_window):
         super().__init__(parent)
-        self.controller = controller # This is the main_window/app.py
+        self.main_window = main_window
 
-        # Title
-        tk.Label(self, text="Lease Management Dashboard", font=("Arial", 20, "bold")).pack(pady=(40, 10))
-        tk.Label(self, text="Manage tenant contracts and early termination requests.", font=("Arial", 10)).pack(pady=(0, 30))
+        tk.Label(self, text="Leases", font=("Arial", 22)).pack(pady=20)
 
-        # Button Container
-        button_frame = tk.Frame(self)
-        button_frame.pack(pady=10)
+        # buttons
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
 
-        # 1. View All Leases (Points to LeaseListPage class)
-        list_btn = tk.Button(button_frame, text="View Active Leases", 
-                             width=30, height=2, bg="#3498db", fg="white", font=("Arial", 11, "bold"),
-                             command=lambda: self.controller.load_page(LeaseListPage))
-        list_btn.pack(pady=10)
+        tk.Button(
+            btn_frame,
+            text="Add Lease",
+            width=18,
+            command=self.open_add_page
+        ).grid(row=0, column=0, padx=5)
 
-        # 2. Create New Lease (Points to AddLeasePage class)
-        add_btn = tk.Button(button_frame, text="Create New Lease Agreement", 
-                            width=30, height=2, bg="#2ecc71", fg="white", font=("Arial", 11, "bold"),
-                            command=lambda: self.controller.load_page(AddLeasePage))
-        add_btn.pack(pady=10)
+        tk.Button(
+            btn_frame,
+            text="Edit Lease",
+            width=18,
+            command=self.open_edit_page
+        ).grid(row=0, column=1, padx=5)
+
+        tk.Button(
+            btn_frame,
+            text="View Lease List",
+            width=18,
+            command=self.open_list_page
+        ).grid(row=0, column=2, padx=5)
+
+        # table
+        self.table = ttk.Treeview(
+            self,
+            columns=("tenant", "apartment", "rent", "start", "end", "active"),
+            show="headings",
+        )
+
+        for col, text in [
+            ("tenant", "Tenant"),
+            ("apartment", "Apartment"),
+            ("rent", "Monthly Rent"),
+            ("start", "Start Date"),
+            ("end", "End Date"),
+            ("active", "Active"),
+        ]:
+            self.table.heading(col, text=text)
+
+        self.table.pack(fill="both", expand=True, pady=10)
+
+        self.load_data()
+
+    # load leases into table
+    def load_data(self):
+        db = get_session()
+        rows = (
+            db.query(Lease, Tenant, Apartment, Location)
+            .join(Tenant, Lease.tenant_id == Tenant.tenant_id)
+            .join(Apartment, Lease.apartment_id == Apartment.apartment_id)
+            .join(Location, Apartment.location_id == Location.location_id)
+            .all()
+        )
+
+        lease_rows = []
+        for lease, tenant, apt, loc in rows:
+            apt_label = f"{loc.name} - Apt {apt.apartment_id}"
+            lease_rows.append((
+                f"{tenant.first_name} {tenant.last_name}",
+                apt_label,
+                f"£{lease.monthly_rent}",
+                lease.start_date.strftime("%Y-%m-%d"),
+                lease.end_date.strftime("%Y-%m-%d"),
+                "Yes" if lease.is_active else "No",
+            ))
+
+        db.close()
+
+        for row in lease_rows:
+            self.table.insert("", "end", values=row)
+
+    # open add lease page
+    def open_add_page(self):
+        from ui.leases.add_lease_page import AddLeasePage
+        self.main_window.load_page(AddLeasePage)
+    # open edit lease page
+    def open_edit_page(self):
+        from ui.leases.edit_lease_page import EditLeasePage
+        self.main_window.load_page(EditLeasePage)
+    # open lease list page
+    def open_list_page(self):
+        from ui.leases.lease_list_page import LeaseListPage
+        self.main_window.load_page(LeaseListPage)

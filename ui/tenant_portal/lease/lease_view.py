@@ -1,66 +1,70 @@
 import tkinter as tk
+from tkinter import ttk
 
-from backend.payment_service import PaymentService
+from database.session import get_session
+from database.models import Lease
 
 
-class LeaseViewPage(tk.Frame):
-    """
-    Displays the tenant's active lease details.
-    Mirrors real-world tenant portals where users can view their lease info.
-    """
+class LeaseView(tk.Frame):
+    """Tenant view of their active lease."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
-
-        # Store references
         self.main_window = main_window
         self.session = main_window.user_session
-        self.tenant_id = self.session.tenant_id
 
-        self.service = PaymentService()
+        db = get_session()
 
-        # Header
-        tk.Label(self, text="My Lease", font=("Arial", 18, "bold")).pack(pady=20)
+        # get active lease
+        lease = (
+            db.query(Lease)
+            .filter(
+                Lease.tenant_id == self.session.tenant_id,
+                Lease.is_active == True,
+            )
+            .first()
+        )
 
-        # Fetch active lease
-        self.lease = self.service.get_current_active_lease_for_tenant(self.tenant_id)
-
-        # If no active lease, show message + back button
-        if not self.lease:
-            tk.Label(self, text="No active lease found.").pack(pady=10)
-            self.add_back_button()
+        if not lease:
+            tk.Label(self, text="No active lease found.", font=("Arial", 16)).pack(pady=20)
+            db.close()
             return
 
-        # Lease Details Container
-        container = tk.Frame(self)
-        container.pack(pady=10)
-
-        # Extract apartment + location info
-        apt = self.lease.apartment
+        # extract all needed values BEFORE closing session
+        apt = lease.apartment
         loc = apt.location
 
-        details = [
-            ("Lease ID:", self.lease.lease_id),
-            ("Apartment ID:", apt.apartment_id),
-            ("City:", loc.city),
-            ("Address:", loc.address),
-            ("Monthly Rent (£):", apt.rent_amount),
-            ("Start Date:", self.lease.start_date),
-            ("End Date:", self.lease.end_date),
-            ("Status:", "Active" if self.lease.is_active else "Inactive"),
-        ]
+        lease_data = {
+            "Apartment ID": apt.apartment_id,
+            "City": loc.city,
+            "Postcode": loc.postcode,
+            "Monthly Rent": f"£{lease.monthly_rent}",
+            "Start Date": lease.start_date.strftime("%Y-%m-%d"),
+            "End Date": lease.end_date.strftime("%Y-%m-%d"),
+            "Deposit": f"£{lease.deposit_amount}",
+        }
 
-        for i, (label, value) in enumerate(details):
-            tk.Label(container, text=label, anchor="w", width=20).grid(row=i, column=0, sticky="w", pady=3)
-            tk.Label(container, text=str(value), anchor="w").grid(row=i, column=1, sticky="w", pady=3)
+        db.close()
 
-        self.add_back_button()
+        tk.Label(self, text="My Lease Details", font=("Arial", 22)).pack(pady=20)
 
-    # Back Button
-    def add_back_button(self):
-        from ui.tenant_portal.dashboard.tenant_dashboard import TenantDashboard
+        frame = tk.Frame(self)
+        frame.pack(pady=10)
+
+        for label, value in lease_data.items():
+            row = tk.Frame(frame)
+            row.pack(anchor="w", pady=3)
+            tk.Label(row, text=f"{label}: ", font=("Arial", 12, "bold")).pack(side="left")
+            tk.Label(row, text=value, font=("Arial", 12)).pack(side="left")
+
+        # back to dashboard
         tk.Button(
             self,
-            text="Back",
-            command=lambda: self.main_window.load_page(TenantDashboard),
+            text="Back to Dashboard",
+            command=self.go_home
         ).pack(pady=20)
+
+    # back to dashboard
+    def go_home(self):
+        from ui.tenant_portal.tenant_dashboard import TenantDashboard
+        self.main_window.load_page(TenantDashboard)

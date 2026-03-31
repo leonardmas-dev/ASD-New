@@ -16,35 +16,49 @@ class ComplaintService:
         self,
         tenant_id: int,
         apartment_id: int,
-        category: str,
         description: str,
-        created_by_staff: bool = False,
     ) -> bool:
         try:
+            # validate active tenant
             tenant = (
                 self.db.query(Tenant)
                 .filter(Tenant.tenant_id == tenant_id, Tenant.is_active == True)
                 .first()
             )
+            if not tenant:
+                return False
+
+            # validate active apartment
             apt = (
                 self.db.query(Apartment)
                 .filter(Apartment.apartment_id == apartment_id, Apartment.is_active == True)
                 .first()
             )
-            if not tenant or not apt:
+            if not apt:
+                return False
+
+            # find an active lease for this tenant + apartment
+            lease = (
+                self.db.query(Lease)
+                .filter(
+                    Lease.tenant_id == tenant_id,
+                    Lease.apartment_id == apartment_id,
+                    Lease.is_active == True,
+                )
+                .first()
+            )
+            if not lease:
+                # no active lease means no complaint
                 return False
 
             comp = Complaint(
                 tenant_id=tenant_id,
-                apartment_id=apartment_id,
-                category=category or "General",
+                lease_id=lease.lease_id,
                 description=description,
+                submitted_at=datetime.now(),
                 status="Open",
-                created_at=datetime.now(),
-                created_by_staff=created_by_staff,
                 resolved_at=None,
                 resolution_notes=None,
-                is_active=True,
             )
             self.db.add(comp)
             self.db.commit()
@@ -54,37 +68,39 @@ class ComplaintService:
             print(f"Create Complaint Error: {e}")
             return False
 
-    # list all active complaints (staff view)
+    # list all complaints (staff view)
     def get_all_complaints(self) -> List[Dict]:
         try:
             rows = (
-                self.db.query(Complaint, Tenant, Apartment)
+                self.db.query(Complaint, Tenant, Lease, Apartment)
                 .join(Tenant, Complaint.tenant_id == Tenant.tenant_id)
-                .join(Apartment, Complaint.apartment_id == Apartment.apartment_id)
-                .filter(Complaint.is_active == True)
+                .join(Lease, Complaint.lease_id == Lease.lease_id)
+                .join(Apartment, Lease.apartment_id == Apartment.apartment_id)
                 .all()
             )
 
             data: List[Dict] = []
-            for comp, tenant, apt in rows:
+            for comp, tenant, lease, apt in rows:
+                loc = apt.location
+                city = loc.city if loc else ""
+                apartment_label = f"{city} - Apt {apt.apartment_id}"
+
                 data.append(
                     {
                         "complaint_id": comp.complaint_id,
                         "tenant_id": comp.tenant_id,
                         "tenant_name": f"{tenant.first_name} {tenant.last_name}",
-                        "apartment_id": comp.apartment_id,
-                        "apartment_label": f"{apt.city} - {apt.apartment_number}"
-                        if hasattr(apt, "city") and hasattr(apt, "apartment_number")
-                        else str(comp.apartment_id),
-                        "category": comp.category,
+                        "apartment_id": apt.apartment_id,
+                        "apartment_label": apartment_label,
                         "description": comp.description,
                         "status": comp.status,
-                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M")
-                        if comp.created_at
+                        "submitted_at": comp.submitted_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.submitted_at
                         else "",
                         "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M")
                         if comp.resolved_at
                         else None,
+                        "resolution_notes": comp.resolution_notes,
                     }
                 )
             return data
@@ -97,11 +113,8 @@ class ComplaintService:
         try:
             rows = (
                 self.db.query(Complaint)
-                .filter(
-                    Complaint.tenant_id == tenant_id,
-                    Complaint.is_active == True,
-                )
-                .order_by(Complaint.created_at.desc())
+                .filter(Complaint.tenant_id == tenant_id)
+                .order_by(Complaint.submitted_at.desc())
                 .all()
             )
 
@@ -110,16 +123,15 @@ class ComplaintService:
                 data.append(
                     {
                         "complaint_id": comp.complaint_id,
-                        "apartment_id": comp.apartment_id,
-                        "category": comp.category,
                         "description": comp.description,
                         "status": comp.status,
-                        "created_at": comp.created_at.strftime("%Y-%m-%d %H:%M")
-                        if comp.created_at
+                        "submitted_at": comp.submitted_at.strftime("%Y-%m-%d %H:%M")
+                        if comp.submitted_at
                         else "",
                         "resolved_at": comp.resolved_at.strftime("%Y-%m-%d %H:%M")
                         if comp.resolved_at
                         else None,
+                        "resolution_notes": comp.resolution_notes,
                     }
                 )
             return data
@@ -137,7 +149,7 @@ class ComplaintService:
         try:
             comp = (
                 self.db.query(Complaint)
-                .filter(Complaint.complaint_id == complaint_id, Complaint.is_active == True)
+                .filter(Complaint.complaint_id == complaint_id)
                 .first()
             )
             if not comp:
@@ -156,7 +168,7 @@ class ComplaintService:
             print(f"Update Complaint Error: {e}")
             return False
 
-    # soft delete complaint
+    # delete complaint
     def delete_complaint(self, complaint_id: int) -> bool:
         try:
             comp = (
@@ -167,7 +179,7 @@ class ComplaintService:
             if not comp:
                 return False
 
-            comp.is_active = False
+            self.db.delete(comp)
             self.db.commit()
             return True
         except Exception as e:

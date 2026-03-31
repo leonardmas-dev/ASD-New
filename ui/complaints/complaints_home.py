@@ -1,47 +1,97 @@
 import tkinter as tk
+from tkinter import ttk
+
+from backend.complaint_service import ComplaintService
+from database.session import get_session
 
 
 class ComplaintsHome(tk.Frame):
+    """Staff overview of all complaints."""
+
     def __init__(self, parent, main_window):
         super().__init__(parent)
         self.main_window = main_window
-        self.session = main_window.user_session
 
-        tk.Label(self, text="Complaints", font=("Arial", 18, "bold")).pack(pady=40)
+        tk.Label(self, text="Complaints", font=("Arial", 22)).pack(pady=20)
 
-        # tenant view – submit + view own complaints
-        if self.session.is_tenant or self.session.role == "Tenant":
-            tk.Button(
-                self,
-                text="Submit a Complaint",
-                width=25,
-                command=self.open_tenant_complaint,
-            ).pack(pady=10)
+        # buttons
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
 
-        # staff view – full complaint management
-        if self.session.role in ["FrontDesk", "Admin", "Manager"]:
-            tk.Button(
-                self,
-                text="View All Complaints",
-                width=25,
-                command=self.open_staff_complaint_list,
-            ).pack(pady=10)
+        tk.Button(
+            btn_frame,
+            text="Add Complaint",
+            width=18,
+            command=self.open_add_page
+        ).grid(row=0, column=0, padx=5)
 
-            tk.Button(
-                self,
-                text="Create Complaint (Staff)",
-                width=25,
-                command=self.open_staff_add_complaint,
-            ).pack(pady=10)
+        tk.Button(
+            btn_frame,
+            text="Edit Complaint",
+            width=18,
+            command=self.open_edit_page
+        ).grid(row=0, column=1, padx=5)
 
-    def open_tenant_complaint(self):
-        from ui.tenant_portal.tenant_complaints_page import TenantComplaint
-        self.main_window.load_page(TenantComplaint)
+        tk.Button(
+            btn_frame,
+            text="View Complaint List",
+            width=18,
+            command=self.open_list_page
+        ).grid(row=0, column=2, padx=5)
 
-    def open_staff_complaint_list(self):
-        from ui.complaints.complaint_list_page import ComplaintListPage
-        self.main_window.load_page(ComplaintListPage)
+        # table
+        self.table = ttk.Treeview(
+            self,
+            columns=("tenant", "apartment", "desc", "status", "submitted"),
+            show="headings",
+        )
 
-    def open_staff_add_complaint(self):
+        for col, text in [
+            ("tenant", "Tenant"),
+            ("apartment", "Apartment"),
+            ("desc", "Description"),
+            ("status", "Status"),
+            ("submitted", "Submitted At"),
+        ]:
+            self.table.heading(col, text=text)
+
+        self.table.pack(fill="both", expand=True, pady=10)
+
+        self.load_data()
+
+    # load complaints
+    def load_data(self):
+        db = get_session()
+        service = ComplaintService(db)
+        rows = service.get_all_complaints()
+
+        # extract before closing session
+        comp_rows = []
+        for r in rows:
+            comp_rows.append((
+                r["tenant_name"],
+                r["apartment_label"],
+                r["description"],
+                r["status"],
+                r["submitted_at"],
+            ))
+
+        db.close()
+
+        for row in comp_rows:
+            self.table.insert("", "end", values=row)
+
+    # open add complaint page
+    def open_add_page(self):
         from ui.complaints.add_complaint_page import AddComplaintPage
         self.main_window.load_page(AddComplaintPage)
+
+    # open edit complaint page
+    def open_edit_page(self):
+        from ui.complaints.edit_complaint_page import EditComplaintPage
+        self.main_window.load_page(EditComplaintPage)
+
+    # open complaint list page
+    def open_list_page(self):
+        from ui.complaints.complaint_list_page import ComplaintListPage
+        self.main_window.load_page(ComplaintListPage)

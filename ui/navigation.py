@@ -1,20 +1,20 @@
 import tkinter as tk
 
+
 class Navigation:
+    """Role-based navigation system."""
+
     def __init__(self, parent, main_window):
         self.parent = parent
         self.main_window = main_window
-
-        # Logged-in user session
         self.session = main_window.user_session
 
-        # Build menu based on role
         self.build_menu()
 
     def build_menu(self):
+        """Build sidebar menu based on user role."""
 
-        # STAFF MENUS
-
+        # Staff
         staff_menus = {
             "Admin": [
                 ("Home", self.load_home),
@@ -60,30 +60,24 @@ class Navigation:
             ],
         }
 
-        # TENANT MENU
-
+        # Tenants
         tenant_menu = [
             ("Home", self.load_home),
-            ("My Lease", self.load_leases),
-            ("Payments", self.load_payments),
+            ("My Lease", self.load_lease_tenant),
+            ("Payments", self.load_payments_tenant),
+            ("Payment Graphs", self.load_payment_graphs_tenant),
             ("My Maintenance", self.load_maintenance_tenant),
             ("My Complaints", self.load_complaints_tenant),
             ("Logout", self.logout),
         ]
 
-
-        # SELECT MENU BASED ON ROLE
-
-        if self.session.is_tenant or self.session.role == "Tenant":
+        if self.session.role == "Tenant":
             allowed_menu = tenant_menu
         else:
             allowed_menu = staff_menus.get(self.session.role, [])
 
-
-        # RENDER BUTTONS
-
         for text, command in allowed_menu:
-            btn = tk.Button(
+            tk.Button(
                 self.parent,
                 text=text,
                 command=command,
@@ -91,20 +85,18 @@ class Navigation:
                 fg="white",
                 relief="flat",
                 height=2
-            )
-            btn.pack(fill="x")
+            ).pack(fill="x")
 
-    # PAGE LOADERS
-
+    # Home
     def load_home(self):
-        if self.session.is_tenant:
+        if self.session.role == "Tenant":
             from ui.tenant_portal.tenant_dashboard import TenantDashboard
             self.main_window.load_page(TenantDashboard)
         else:
             from ui.home_page import HomePage
             self.main_window.load_page(HomePage)
 
-    # STAFF LOADERS
+    # Staff loaders
     def load_tenants(self):
         from ui.tenants.tenants_home import TenantsHome
         self.main_window.load_page(TenantsHome)
@@ -130,23 +122,35 @@ class Navigation:
         self.main_window.load_page(ComplaintsHome)
 
     def load_reports(self):
-        from ui.reports.reports_home import ReportsHomePage
-        self.main_window.load_page(ReportsHomePage)
+        from ui.reports.reports_home import ReportsHome
+        self.main_window.load_page(ReportsHome)
 
     def load_users(self):
-        from ui.user_management.users_home import UsersHomePage
-        self.main_window.load_page(UsersHomePage)
+        from ui.user_management.users_home import UsersHome
+        self.main_window.load_page(UsersHome)
 
-    # TENANT LOADERS
+    # Loaders for tenants
+    def load_lease_tenant(self):
+        from ui.tenant_portal.lease.lease_view import LeaseView
+        self.main_window.load_page(LeaseView)
+
+    def load_payments_tenant(self):
+        from ui.tenant_portal.payments.payments_home import PaymentsHome
+        self.main_window.load_page(PaymentsHome)
+
+    def load_payment_graphs_tenant(self):
+        from ui.tenant_portal.payments.payment_graphs import PaymentGraphs
+        self.main_window.load_page(PaymentGraphs)
+
     def load_maintenance_tenant(self):
-        from ui.tenant_portal.tenant_maintenance_page import TenantMaintenance
-        self.main_window.load_page(TenantMaintenance)
+        from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
+        self.main_window.load_page(MaintenanceHome)
 
     def load_complaints_tenant(self):
-        from ui.tenant_portal.tenant_complaints_page import TenantComplaint
-        self.main_window.load_page(TenantComplaint)
+        from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
+        self.main_window.load_page(ComplaintsHome)
 
-    # LOGOUT
+    # Logout
     def logout(self):
         self.main_window.destroy()
         from ui.login_page import LoginPage

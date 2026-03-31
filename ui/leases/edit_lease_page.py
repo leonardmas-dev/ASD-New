@@ -1,114 +1,80 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime, timedelta
-import sys
-import os
+from datetime import datetime
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
-
-from database.session import SessionLocal
-from backend.lease_service import LeaseService
+from database.session import get_session
+from database.models import Lease
 
 
 class EditLeasePage(tk.Frame):
-    def __init__(
-        self,
-        parent,
-        controller,
-        lease_id=None,
-        tenant_name="--",
-        apt_id=None,
-        rent=0.0,
-        **kwargs,
-    ):
+    """Edit an existing lease."""
+
+    def __init__(self, parent, main_window, lease_id):
         super().__init__(parent)
-        self.controller = controller
 
-        self.current_lease_id = lease_id
-        self.current_apt_id = apt_id
+        self.lease_id = lease_id
 
+        tk.Label(self, text="Edit Lease", font=("Arial", 22)).pack(pady=20)
+
+        form = tk.Frame(self)
+        form.pack(pady=10)
+
+        tk.Label(form, text="Monthly Rent:").grid(row=0, column=0, sticky="e")
+        self.rent_entry = tk.Entry(form)
+        self.rent_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(form, text="Deposit:").grid(row=1, column=0, sticky="e")
+        self.deposit_entry = tk.Entry(form)
+        self.deposit_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Label(form, text="Start Date:").grid(row=2, column=0, sticky="e")
+        self.start_entry = tk.Entry(form)
+        self.start_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        tk.Label(form, text="End Date:").grid(row=3, column=0, sticky="e")
+        self.end_entry = tk.Entry(form)
+        self.end_entry.grid(row=3, column=1, padx=5, pady=5)
+
+        tk.Label(form, text="Active (Yes/No):").grid(row=4, column=0, sticky="e")
+        self.active_combo = ttk.Combobox(form, values=["Yes", "No"], state="readonly")
+        self.active_combo.grid(row=4, column=1, padx=5, pady=5)
+
+        tk.Button(self, text="Save Changes", command=self.save).pack(pady=15)
+
+        self.load_data()
+
+    def load_data(self):
+        db = get_session()
+        lease = db.query(Lease).filter(Lease.lease_id == self.lease_id).first()
+        db.close()
+
+        self.rent_entry.insert(0, lease.monthly_rent)
+        self.deposit_entry.insert(0, lease.deposit_amount)
+        self.start_entry.insert(0, lease.start_date.strftime("%Y-%m-%d"))
+        self.end_entry.insert(0, lease.end_date.strftime("%Y-%m-%d"))
+        self.active_combo.set("Yes" if lease.is_active else "No")
+
+    def save(self):
         try:
-            self.current_rent = float(str(rent).replace('£', '').replace(',', ''))
-        except ValueError:
-            self.current_rent = 0.0
-
-        tk.Label(self, text="Manage / Terminate Lease", font=("Arial", 18, "bold")).pack(pady=20)
-
-        info_frame = tk.LabelFrame(self, text="Current Lease Details", padx=20, pady=10)
-        info_frame.pack(pady=10, fill="x", padx=30)
-
-        self.lbl_id = tk.Label(info_frame, text=f"Lease ID: {lease_id if lease_id else '--'}")
-        self.lbl_id.pack(anchor="w")
-
-        self.lbl_tenant = tk.Label(info_frame, text=f"Tenant: {tenant_name}")
-        self.lbl_tenant.pack(anchor="w")
-
-        self.lbl_rent = tk.Label(info_frame, text=f"Monthly Rent: £{self.current_rent:.2f}")
-        self.lbl_rent.pack(anchor="w")
-
-        term_frame = tk.LabelFrame(self, text="Early Termination Request", padx=20, pady=10, fg="red")
-        term_frame.pack(pady=20, fill="x", padx=30)
-
-        tk.Label(term_frame, text="Notice Date (Today):").grid(row=0, column=0, sticky="w")
-        tk.Label(term_frame, text=datetime.now().strftime('%Y-%m-%d')).grid(row=0, column=1, padx=10)
-
-        tk.Label(term_frame, text="Intended Move-out Date:").grid(row=1, column=0, sticky="w")
-        self.move_out_entry = tk.Entry(term_frame)
-        self.move_out_entry.insert(0, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
-        self.move_out_entry.grid(row=1, column=1, padx=10, pady=5)
-
-        calc_btn = tk.Button(term_frame, text="Calculate Penalty (5%)", command=self.calculate_early_exit)
-        calc_btn.grid(row=2, column=0, columnspan=2, pady=10)
-
-        self.penalty_lbl = tk.Label(term_frame, text="Penalty Due: £0.00", font=("Arial", 10, "bold"))
-        self.penalty_lbl.grid(row=3, column=0, columnspan=2)
-
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=20)
-
-        tk.Button(
-            btn_frame,
-            text="Confirm Termination",
-            bg="#e74c3c",
-            fg="white",
-            width=20,
-            command=self.confirm_termination,
-        ).pack(side="left", padx=10)
-
-        from ui.leases.lease_list_page import LeaseListPage
-        tk.Button(
-            btn_frame,
-            text="Cancel",
-            command=lambda: self.controller.load_page(LeaseListPage),
-        ).pack(side="left")
-
-    def calculate_early_exit(self):
-        # 5% of monthly rent
-        penalty = self.current_rent * 0.05
-        self.penalty_lbl.config(text=f"Penalty Due: £{penalty:.2f}")
-        messagebox.showinfo("Policy Check", "Paragon Policy: 1 month notice is required. 5% penalty applied.")
-
-    def confirm_termination(self):
-        if not self.current_lease_id:
+            rent = int(self.rent_entry.get())
+            deposit = int(self.deposit_entry.get())
+            start = datetime.strptime(self.start_entry.get(), "%Y-%m-%d")
+            end = datetime.strptime(self.end_entry.get(), "%Y-%m-%d")
+            active = self.active_combo.get() == "Yes"
+        except Exception:
+            messagebox.showerror("Error", "Invalid input.")
             return
 
-        ans = messagebox.askyesno(
-            "Confirm",
-            "Finalize early termination? This will make the apartment available immediately.",
-        )
-        if not ans:
-            return
+        db = get_session()
+        lease = db.query(Lease).filter(Lease.lease_id == self.lease_id).first()
 
-        db = SessionLocal()
-        service = LeaseService(db)
-        try:
-            penalty = service.terminate_lease(self.current_lease_id, self.current_apt_id)
-        finally:
-            db.close()
+        lease.monthly_rent = rent
+        lease.deposit_amount = deposit
+        lease.start_date = start
+        lease.end_date = end
+        lease.is_active = active
 
-        if penalty is not None:
-            messagebox.showinfo("Success", f"Lease terminated.\nPenalty of £{penalty:.2f} recorded.")
-            from ui.leases.lease_list_page import LeaseListPage
-            self.controller.load_page(LeaseListPage)
-        else:
-            messagebox.showerror("Error", "Could not process termination.")
+        db.commit()
+        db.close()
+
+        messagebox.showinfo("Success", "Lease updated.")
