@@ -1,77 +1,47 @@
 import tkinter as tk
-
+from PIL import Image, ImageTk
+import os
 
 class TenantDashboard(tk.Frame):
-    """Main tenant dashboard with navigation to tenant modules."""
-
+    """Tenant dashboard."""
     def __init__(self, parent, main_window):
         super().__init__(parent)
-
         self.main_window = main_window
         self.session = main_window.user_session
-
-        tk.Label(self, text="Tenant Dashboard", font=("Arial", 24)).pack(pady=20)
-
-        btn_frame = tk.Frame(self)
-        btn_frame.pack(pady=10)
-
-        # My Lease
-        tk.Button(
-            btn_frame,
-            text="My Lease",
-            width=20,
-            command=self.open_lease
-        ).grid(row=0, column=0, padx=5, pady=5)
-
-        # Payments
-        tk.Button(
-            btn_frame,
-            text="Payments",
-            width=20,
-            command=self.open_payments
-        ).grid(row=0, column=1, padx=5, pady=5)
-
-        # Payment Graphs
-        tk.Button(
-            btn_frame,
-            text="Payment Graphs",
-            width=20,
-            command=self.open_payment_graphs
-        ).grid(row=1, column=0, padx=5, pady=5)
-
-        # Maintenance
-        tk.Button(
-            btn_frame,
-            text="Maintenance",
-            width=20,
-            command=self.open_maintenance
-        ).grid(row=1, column=1, padx=5, pady=5)
-
-        # Complaints
-        tk.Button(
-            btn_frame,
-            text="Complaints",
-            width=20,
-            command=self.open_complaints
-        ).grid(row=2, column=0, padx=5, pady=5)
-
-    # Navigation methods
-    def open_lease(self):
-        from ui.tenant_portal.lease.lease_view import LeaseView
-        self.main_window.load_page(LeaseView)
-
-    def open_payments(self):
-        from ui.tenant_portal.payments.payments_home import PaymentsHome
-        self.main_window.load_page(PaymentsHome)
-
-    def open_payment_graphs(self):
-        from ui.tenant_portal.payments.payment_graphs import PaymentGraphs
-        self.main_window.load_page(PaymentGraphs)
-
-    def open_maintenance(self):
-        from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
-        self.main_window.load_page(MaintenanceHome)
-
-    def open_complaints(self):
-        from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        tk.Label(self, text="Welcome to Your Tenant Portal", font=("Arial", 26, "bold")).pack(pady=20)
+        # text for intro
+        intro = (
+            "This portal gives you quick access to everything related to your tenancy.\n\n"
+            "Use the navigation menu on the left to:\n"
+            " • View your lease details\n"
+            " • Make and track payments\n"
+            " • Submit and monitor maintenance requests\n"
+            " • File and follow up on complaints\n\n"
+            "Everything you need is just one click away."
+        )
+        tk.Label(self, text=intro, font=("Arial", 14), justify="left").pack(pady=10)
+        # Image for a stock photo
+        image_path = os.path.join("ui", "apartment_interior.jpg")
+        self.image_label = tk.Label(self)
+        self.image_label.pack(pady=20)
+        if os.path.exists(image_path):
+            try:
+                img = Image.open(image_path)
+                img = img.resize((600, 350), Image.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
+                self.image_label.config(image=photo)
+                self.image_label.image = photo
+            except Exception:
+                self.image_label.config(
+                    text="(Image could not be loaded)",
+                    font=("Arial", 12, "italic")
+                )
+        else:
+            placeholder = tk.Frame(self.image_label, width=600, height=350, bg="#d9d9d9")
+            placeholder.pack()
+            tk.Label(
+                placeholder,
+                text="image",
+                bg="#d9d9d9",
+                font=("Arial", 12, "italic")
+            ).place(relx=0.5, rely=0.5, anchor="center")

@@ -1,135 +1,95 @@
 import tkinter as tk
 from tkinter import messagebox
-from datetime import datetime
 
 from backend.payment_service import PaymentService
 from database.session import get_session
 
 
-class TenantPaymentsMakePage(tk.Frame):
-    """Tenant page for submitting a payment."""
+class TenantMakePaymentPage(tk.Frame):
+    """Tenant makes a payment (simulated card)."""
 
-    def __init__(self, parent, main_window):
+    def __init__(self, parent, main_window, payment):
         super().__init__(parent)
 
         self.main_window = main_window
-        self.session = main_window.user_session
-        self.tenant_id = self.session.tenant_id
+        self.payment = payment  
 
-        db = get_session()
-        self.service = PaymentService(db)
+        tk.Label(self, text="Make Payment", font=("Arial", 22)).pack(pady=20)
 
-        # Get active lease
-        self.lease = self.service.get_current_active_lease_for_tenant(self.tenant_id)
+        # Payment summary
+        summary = tk.Frame(self)
+        summary.pack(pady=10)
 
-        tk.Label(self, text="Make a Payment", font=("Arial", 20, "bold")).pack(pady=20)
+        tk.Label(summary, text=f"Amount Due: £{self.payment['amount_due']}", font=("Arial", 14)).pack()
+        tk.Label(summary, text=f"Status: {self.payment['status']}", font=("Arial", 12)).pack()
 
-        if not self.lease:
-            tk.Label(self, text="No active lease found. You cannot make a payment.").pack(pady=10)
-            db.close()
-            self.add_back_button()
-            return
+        # Here I have basically just simulated a card payment with fake details
+        card_frame = tk.LabelFrame(self, text="Card Details (Simulated)", padx=10, pady=10)
+        card_frame.pack(pady=20)
 
-        apt = self.lease.apartment
-        loc = apt.location
+        # card holder
+        tk.Label(card_frame, text="Card Holder Name:").grid(row=0, column=0, sticky="w")
+        entry_name = tk.Entry(card_frame, width=30)
+        entry_name.insert(0, "John Doe")
+        entry_name.config(state="disabled")
+        entry_name.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(
+        # card number
+        tk.Label(card_frame, text="Card Number:").grid(row=1, column=0, sticky="w")
+        entry_number = tk.Entry(card_frame, width=30)
+        entry_number.insert(0, "0000 0000 0000 0000")
+        entry_number.config(state="disabled")
+        entry_number.grid(row=1, column=1, padx=5, pady=5)
+
+        # CVV
+        tk.Label(card_frame, text="CVV:").grid(row=2, column=0, sticky="w")
+        entry_cvv = tk.Entry(card_frame, width=10)
+        entry_cvv.insert(0, "000")
+        entry_cvv.config(state="disabled")
+        entry_cvv.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+        # expiry
+        tk.Label(card_frame, text="Expiry:").grid(row=3, column=0, sticky="w")
+        entry_exp = tk.Entry(card_frame, width=10)
+        entry_exp.insert(0, "01/30")
+        entry_exp.config(state="disabled")
+        entry_exp.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+        # pay button
+        tk.Button(
             self,
-            text=f"Lease #{self.lease.lease_id} — {loc.city} — Apt {apt.apartment_id}",
-            font=("Arial", 12)
-        ).pack(pady=5)
+            text="Pay Now",
+            width=20,
+            bg="#4CAF50",
+            fg="white",
+            command=self.make_payment
+        ).pack(pady=20)
 
-        form = tk.Frame(self)
-        form.pack(pady=10)
+        # back button
+        tk.Button(
+            self,
+            text="Back",
+            command=self.go_back
+        ).pack(pady=10)
 
-        # Amount
-        tk.Label(form, text="Amount to Pay (£)").grid(row=0, column=0, sticky="w")
-        self.amount_entry = tk.Entry(form)
-        self.amount_entry.grid(row=0, column=1, padx=5, pady=5)
-
-        # Due date
-        tk.Label(form, text="Due Date (YYYY-MM-DD)").grid(row=1, column=0, sticky="w")
-        self.due_entry = tk.Entry(form)
-        self.due_entry.grid(row=1, column=1, padx=5, pady=5)
-
-        # Card fields
-        tk.Label(form, text="Card Number").grid(row=2, column=0, sticky="w")
-        self.card_entry = tk.Entry(form)
-        self.card_entry.grid(row=2, column=1, padx=5, pady=5)
-
-        tk.Label(form, text="Expiry (MM/YY)").grid(row=3, column=0, sticky="w")
-        self.expiry_entry = tk.Entry(form)
-        self.expiry_entry.grid(row=3, column=1, padx=5, pady=5)
-
-        tk.Label(form, text="CVV").grid(row=4, column=0, sticky="w")
-        self.cvv_entry = tk.Entry(form, show="*")
-        self.cvv_entry.grid(row=4, column=1, padx=5, pady=5)
-
-        btns = tk.Frame(self)
-        btns.pack(pady=15)
-
-        tk.Button(btns, text="Submit Payment", command=self.submit_payment).grid(row=0, column=0, padx=5)
-        self.add_back_button(btns)
-
-        db.close()
-
-    def submit_payment(self):
-        if not self.lease:
-            return
-
-        # Amount
-        try:
-            amount = float(self.amount_entry.get().strip())
-        except ValueError:
-            messagebox.showerror("Error", "Amount must be a number.")
-            return
-
-        # Due date
-        try:
-            due_date = datetime.strptime(self.due_entry.get().strip(), "%Y-%m-%d")
-        except ValueError:
-            messagebox.showerror("Error", "Invalid due date format.")
-            return
-
-        # Card details
-        card = self.card_entry.get().strip()
-        expiry = self.expiry_entry.get().strip()
-        cvv = self.cvv_entry.get().strip()
-
+    def make_payment(self):
         db = get_session()
         service = PaymentService(db)
 
-        payment = service.tenant_make_payment(
-            tenant_id=self.tenant_id,
-            lease_id=self.lease.lease_id,
-            amount_due=amount,
-            amount_paid=amount,
-            due_date=due_date,
-            card_number=card,
-            expiry=expiry,
-            cvv=cvv,
+        ok = service.record_payment(
+            payment_id=self.payment["payment_id"],
+            amount_paid=self.payment["amount_due"]
         )
 
         db.close()
 
-        if not payment:
-            messagebox.showerror("Payment Failed", "Invalid card details.")
-            return
-
-        if payment.is_late:
-            messagebox.showwarning(
-                "Late Payment",
-                f"Payment recorded but marked as LATE.\nLate fee applied: £{payment.late_fee}"
-            )
+        if ok:
+            messagebox.showinfo("Success", "Payment completed successfully.")
+            from ui.tenant_portal.payments.payments_home import PaymentsHome
+            self.main_window.load_page(lambda parent, mw: PaymentsHome(parent, mw))
         else:
-            messagebox.showinfo("Success", "Payment recorded successfully.")
+            messagebox.showerror("Error", "Payment failed.")
 
-    def add_back_button(self, parent=None):
+    def go_back(self):
         from ui.tenant_portal.payments.payments_home import PaymentsHome
-
-        container = parent if parent else self
-        tk.Button(
-            container,
-            text="Back",
-            command=lambda: self.main_window.load_page(PaymentsHome),
-        ).pack(pady=20)
+        self.main_window.load_page(lambda parent, mw: PaymentsHome(parent, mw))

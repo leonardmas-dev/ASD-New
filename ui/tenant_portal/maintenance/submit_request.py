@@ -14,7 +14,6 @@ class SubmitRequest(tk.Frame):
 
         self.main_window = main_window
         self.session = main_window.user_session
-        tenant_id = self.session.tenant_id
 
         tk.Label(self, text="Submit Maintenance Request", font=("Arial", 22)).pack(pady=20)
 
@@ -53,19 +52,23 @@ class SubmitRequest(tk.Frame):
             return
 
         service = MaintenanceService(db)
+
         ok = service.create_request(
             tenant_id=self.session.tenant_id,
             apartment_id=lease.apartment_id,
             description=desc,
+            priority="Medium",   # default priority chosen by system, staff can change this later them selves
+            staff_user_id=None,  # tenant cannot assign staff to complete that request, staff member will add this manually
         )
 
         db.close()
 
         if ok:
-            messagebox.showinfo("Success", "Request submitted.")
+            messagebox.showinfo("Success", "Maintenance request submitted.")
+            self.desc_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to submit request.")
 
     def go_back(self):
         from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
-        self.main_window.load_page(MaintenanceHome)
+        self.main_window.load_page(lambda parent, mw: MaintenanceHome(parent, mw))

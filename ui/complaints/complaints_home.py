@@ -14,6 +14,7 @@ class ComplaintsHome(tk.Frame):
 
         tk.Label(self, text="Complaints", font=("Arial", 22)).pack(pady=20)
 
+        # navigation buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -21,30 +22,31 @@ class ComplaintsHome(tk.Frame):
             btn_frame,
             text="Add Complaint",
             width=18,
-            command=self.open_add_page
+            command=self.open_add_page,
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
             btn_frame,
             text="Edit Complaint",
             width=18,
-            command=self.open_edit_page
+            command=self.open_edit_page,
         ).grid(row=0, column=1, padx=5)
 
         tk.Button(
             btn_frame,
             text="View Complaint List",
             width=18,
-            command=self.open_list_page
+            command=self.open_list_page,
         ).grid(row=0, column=2, padx=5)
 
         tk.Button(
             btn_frame,
             text="Refresh",
             width=12,
-            command=self.refresh_table
+            command=self.refresh_table,
         ).grid(row=0, column=3, padx=5)
 
+        # table
         self.table = ttk.Treeview(
             self,
             columns=("tenant", "apartment", "desc", "status", "submitted"),
@@ -65,39 +67,38 @@ class ComplaintsHome(tk.Frame):
         self.load_data()
 
     def load_data(self):
+        """Load all complaints."""
         db = get_session()
         service = ComplaintService(db)
         rows = service.get_all_complaints()
-
-        extracted = [
-            (
-                r["tenant_name"],
-                r["apartment_label"],
-                r["description"],
-                r["status"],
-                r["submitted_at"],
-            )
-            for r in rows
-        ]
-
         db.close()
 
-        for row in extracted:
-            self.table.insert("", "end", values=row)
+        for r in rows:
+            self.table.insert(
+                "",
+                "end",
+                values=(
+                    r["tenant_name"],
+                    r["apartment_label"],
+                    r["description"],
+                    r["status"],
+                    r["submitted_at"],
+                ),
+            )
 
     def refresh_table(self):
-        for item in self.table.get_children():
-            self.table.delete(item)
+        """Clear and reload table."""
+        self.table.delete(*self.table.get_children())
         self.load_data()
 
     def open_add_page(self):
         from ui.complaints.add_complaint_page import AddComplaintPage
-        self.main_window.load_page(AddComplaintPage)
+        self.main_window.load_page(lambda parent, mw: AddComplaintPage(parent, mw))
 
     def open_edit_page(self):
         from ui.complaints.edit_complaint_page import EditComplaintPage
-        self.main_window.load_page(EditComplaintPage)
+        self.main_window.load_page(lambda parent, mw: EditComplaintPage(parent, mw))
 
     def open_list_page(self):
         from ui.complaints.complaint_list_page import ComplaintListPage
-        self.main_window.load_page(ComplaintListPage)
+        self.main_window.load_page(lambda parent, mw: ComplaintListPage(parent, mw))

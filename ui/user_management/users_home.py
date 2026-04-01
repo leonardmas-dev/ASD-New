@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from backend.user_service import UserService
 
-
 class UsersHomePage(tk.Frame):
     """Staff user management home page."""
 

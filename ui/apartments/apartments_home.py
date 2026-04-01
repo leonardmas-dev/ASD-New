@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
-
 from database.session import get_session
 from database.models import Apartment, Location, Lease
 from sqlalchemy.orm import joinedload
@@ -25,6 +24,7 @@ class ApartmentsHome(tk.Frame):
         self.location_filter.pack(side="left", padx=5)
 
         self.location_filter.bind("<<ComboboxSelected>>", lambda e: self.refresh())
+
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -62,12 +62,25 @@ class ApartmentsHome(tk.Frame):
             width=18,
             command=self.refresh,
         ).grid(row=0, column=4, padx=5)
+        table_container = tk.Frame(self)
+        table_container.pack(fill="both", expand=True, pady=10)
+
+        x_scroll = tk.Scrollbar(table_container, orient="horizontal")
+        x_scroll.pack(side="bottom", fill="x")
+
+        y_scroll = tk.Scrollbar(table_container, orient="vertical")
+        y_scroll.pack(side="right", fill="y")
+
         self.table = ttk.Treeview(
-            self,
+            table_container,
             columns=("id", "location", "type", "rooms", "rent", "floor", "available", "active", "tenant"),
             show="headings",
+            xscrollcommand=x_scroll.set,
+            yscrollcommand=y_scroll.set,
         )
-
+        self.table.pack(fill="both", expand=True)
+        x_scroll.config(command=self.table.xview)
+        y_scroll.config(command=self.table.yview)
         headings = [
             ("id", "ID"),
             ("location", "Location"),
@@ -83,8 +96,9 @@ class ApartmentsHome(tk.Frame):
         for col, text in headings:
             self.table.heading(col, text=text)
 
+        # Keep ID column hidden like before
         self.table.column("id", width=0, stretch=False)
-        self.table.pack(fill="both", expand=True, pady=10)
+
         self.load_locations()
         self.load_data()
 
@@ -97,11 +111,13 @@ class ApartmentsHome(tk.Frame):
         names = ["All"] + [loc.name for loc in locations]
         self.location_filter["values"] = names
         self.location_filter.set("All")
+
     def refresh(self):
         for row in self.table.get_children():
             self.table.delete(row)
         self.load_data()
-    # load apartment data
+
+    # Load apartment data
     def load_data(self):
         db = get_session()
 
@@ -112,7 +128,6 @@ class ApartmentsHome(tk.Frame):
             .options(joinedload(Apartment.location), joinedload(Apartment.leases))
         )
 
-        # Apply filter
         if selected_location and selected_location != "All":
             query = query.join(Apartment.location).filter(Location.name == selected_location)
 
@@ -120,7 +135,6 @@ class ApartmentsHome(tk.Frame):
         now = datetime.utcnow()
 
         for apt in apartments:
-            # Determine active lease
             active_lease = None
             for lease in apt.leases:
                 if lease.is_active and lease.start_date <= now <= lease.end_date:
@@ -149,6 +163,7 @@ class ApartmentsHome(tk.Frame):
             )
 
         db.close()
+
     def _get_selected_apartment_id(self):
         selected = self.table.selection()
         if not selected:

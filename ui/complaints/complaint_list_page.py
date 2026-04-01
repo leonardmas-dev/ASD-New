@@ -14,6 +14,7 @@ class ComplaintListPage(tk.Frame):
 
         tk.Label(self, text="Complaint List", font=("Arial", 22)).pack(pady=20)
 
+        # table
         self.table = ttk.Treeview(
             self,
             columns=("id", "tenant", "apartment", "status"),
@@ -30,11 +31,17 @@ class ComplaintListPage(tk.Frame):
 
         self.table.pack(fill="both", expand=True, pady=10)
 
-        tk.Button(self, text="Back", width=10, command=self.go_back).pack(pady=15)
+        tk.Button(
+            self,
+            text="Back",
+            width=10,
+            command=self.go_back,
+        ).pack(pady=15)
 
         self.load_data()
 
     def load_data(self):
+        """Load all complaints."""
         db = get_session()
         service = ComplaintService(db)
         rows = service.get_all_complaints()
@@ -53,5 +60,6 @@ class ComplaintListPage(tk.Frame):
             )
 
     def go_back(self):
+        """Return to complaints home."""
         from ui.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))

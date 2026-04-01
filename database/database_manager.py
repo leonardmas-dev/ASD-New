@@ -10,15 +10,15 @@ def initialize_database():
         conn.execute(text(f"CREATE DATABASE IF NOT EXISTS {DB_NAME};"))
         conn.execute(text(f"USE {DB_NAME};"))
 
-    # Connect to actual DB
+    # connect to actual DB
     engine = create_engine(DB_URL)
     inspector = inspect(engine)
 
-    # Get existing tables
+    # get tables
     existing_tables = inspector.get_table_names()
     model_tables = list(Base.metadata.tables.keys())
 
-    # If table count or names differ → rebuild
+    # If table count or names differ then it will be rebuilt again
     if set(existing_tables) != set(model_tables):
         print("Table mismatch detected — rebuilding database...")
         Base.metadata.drop_all(engine)
@@ -26,7 +26,7 @@ def initialize_database():
         print("Database updated.")
         return engine
 
-    # Check columns for each table
+    # columns check for every table
     for table_name, table in Base.metadata.tables.items():
         model_columns = set(table.columns.keys())
         db_columns = set(col["name"] for col in inspector.get_columns(table_name))

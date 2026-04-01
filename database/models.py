@@ -6,9 +6,9 @@ from datetime import datetime
 
 Base = declarative_base()
 
-# ---------------------------------------------------------
+
 # 1. Location
-# ---------------------------------------------------------
+
 class Location(Base):
     __tablename__ = "location"
 
@@ -24,9 +24,9 @@ class Location(Base):
     apartments = relationship("Apartment", back_populates="location")
 
 
-# ---------------------------------------------------------
+
 # 2. Tenant
-# ---------------------------------------------------------
+
 class Tenant(Base):
     __tablename__ = "tenant"
 
@@ -52,9 +52,9 @@ class Tenant(Base):
     maintenance_requests = relationship("MaintenanceRequest", back_populates="tenant")
 
 
-# ---------------------------------------------------------
+
 # 3. User (Staff)
-# ---------------------------------------------------------
+
 class User(Base):
     __tablename__ = "user"
 
@@ -74,9 +74,9 @@ class User(Base):
     staff_assignments = relationship("MaintenanceStaffAssignment", back_populates="user")
 
 
-# ---------------------------------------------------------
+
 # 4. TenantAccount (1:1)
-# ---------------------------------------------------------
+
 class TenantAccount(Base):
     __tablename__ = "tenant_account"
 
@@ -90,9 +90,7 @@ class TenantAccount(Base):
     tenant = relationship("Tenant", back_populates="tenant_account")
 
 
-# ---------------------------------------------------------
 # 5. Apartment
-# ---------------------------------------------------------
 class Apartment(Base):
     __tablename__ = "apartment"
 
@@ -111,9 +109,8 @@ class Apartment(Base):
     maintenance_requests = relationship("MaintenanceRequest", back_populates="apartment")
 
 
-# ---------------------------------------------------------
 # 6. Lease
-# ---------------------------------------------------------
+
 class Lease(Base):
     __tablename__ = "lease"
 
@@ -136,9 +133,9 @@ class Lease(Base):
     maintenance_requests = relationship("MaintenanceRequest", back_populates="lease")
 
 
-# ---------------------------------------------------------
+
 # 7. Payment
-# ---------------------------------------------------------
+
 class Payment(Base):
     __tablename__ = "payment"
 
@@ -156,9 +153,9 @@ class Payment(Base):
     lease = relationship("Lease", back_populates="payments")
 
 
-# ---------------------------------------------------------
+
 # 8. Invoice
-# ---------------------------------------------------------
+
 class Invoice(Base):
     __tablename__ = "invoice"
 
@@ -175,9 +172,8 @@ class Invoice(Base):
     lease = relationship("Lease", back_populates="invoices")
 
 
-# ---------------------------------------------------------
+
 # 9. Complaint
-# ---------------------------------------------------------
 class Complaint(Base):
     __tablename__ = "complaint"
 
@@ -195,9 +191,8 @@ class Complaint(Base):
     lease = relationship("Lease", back_populates="complaints")
 
 
-# ---------------------------------------------------------
+
 # 10. MaintenanceRequest
-# ---------------------------------------------------------
 class MaintenanceRequest(Base):
     __tablename__ = "maintenance_request"
 
@@ -223,9 +218,7 @@ class MaintenanceRequest(Base):
     staff_assignments = relationship("MaintenanceStaffAssignment", back_populates="maintenance_request")
 
 
-# ---------------------------------------------------------
 # 11. MaintenanceStaffAssignment
-# ---------------------------------------------------------
 class MaintenanceStaffAssignment(Base):
     __tablename__ = "maintenance_staff_assignment"
 

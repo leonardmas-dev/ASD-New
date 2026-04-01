@@ -24,17 +24,14 @@ class AuthService:
         Returns UserSession on success, None on failure.
         """
 
-        # Try staff login
         staff_session = self._authenticate_staff(username, password)
         if staff_session:
             return staff_session
 
-        # Try tenant login
         tenant_session = self._authenticate_tenant(username, password)
         if tenant_session:
             return tenant_session
 
-        # No valid user found
         return None
 
     def _authenticate_staff(self, username: str, password: str) -> UserSession | None:
@@ -89,7 +86,7 @@ class AuthService:
 
         # Build session object for tenant user
         return UserSession(
-            user_id=None,  # tenants don't use staff user_id
+            user_id=None, 
             username=tenant_account.username,
             role="Tenant",
             is_tenant=True,

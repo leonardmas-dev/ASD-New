@@ -1,7 +1,7 @@
 import bcrypt
 from database.session import get_session
 from database.models import User
-
+# this is code to make an admin user to begin with who can manage other staff
 def create_admin():
     db = get_session()
 
@@ -16,7 +16,7 @@ def create_admin():
         username="admin",
         password_hash=hashed,
         role="Admin",
-        location_id=1,  # adjust if needed
+        location_id=1,  
         is_active=True
     )
 

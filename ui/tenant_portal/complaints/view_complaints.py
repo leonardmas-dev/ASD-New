@@ -6,7 +6,7 @@ from database.session import get_session
 
 
 class ViewComplaints(tk.Frame):
-    """Read‑only list of tenant complaints."""
+    """Read-only list of tenant complaints."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
@@ -14,16 +14,24 @@ class ViewComplaints(tk.Frame):
         self.main_window = main_window
         self.session = main_window.user_session
 
-        tk.Label(self, text="View Complaints", font=("Arial", 22)).pack(pady=20)
+        tk.Label(self, text="My Complaint History", font=("Arial", 22)).pack(pady=20)
 
         self.table = ttk.Treeview(
             self,
-            columns=("desc", "status", "submitted"),
+            columns=("desc", "status", "submitted", "response"),
             show="headings",
         )
+
         self.table.heading("desc", text="Description")
         self.table.heading("status", text="Status")
         self.table.heading("submitted", text="Submitted At")
+        self.table.heading("response", text="Staff Response")
+
+        self.table.column("desc", width=250)
+        self.table.column("status", width=120)
+        self.table.column("submitted", width=150)
+        self.table.column("response", width=250)
+
         self.table.pack(fill="both", expand=True, pady=10)
 
         tk.Button(
@@ -44,9 +52,14 @@ class ViewComplaints(tk.Frame):
             self.table.insert(
                 "",
                 "end",
-                values=(r["description"], r["status"], r["submitted_at"]),
+                values=(
+                    r["description"],
+                    r["status"],
+                    r["submitted_at"],
+                    r["staff_response"] or "",
+                ),
             )
 
     def go_back(self):
         from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))

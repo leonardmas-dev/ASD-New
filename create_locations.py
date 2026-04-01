@@ -3,7 +3,7 @@ from database.models import Location
 
 def create_locations():
     db = get_session()
-
+# Here I just made some locations to pre populate database
     locations = [
         Location(
             name="Bristol Office",

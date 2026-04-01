@@ -14,6 +14,7 @@ class MaintenanceHome(tk.Frame):
 
         tk.Label(self, text="Maintenance Requests", font=("Arial", 22)).pack(pady=20)
 
+        # navigation buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -45,9 +46,18 @@ class MaintenanceHome(tk.Frame):
             command=self.refresh_table,
         ).grid(row=0, column=3, padx=5)
 
+        # table
         self.table = ttk.Treeview(
             self,
-            columns=("tenant", "apartment", "desc", "priority", "status", "submitted"),
+            columns=(
+                "tenant",
+                "apartment",
+                "desc",
+                "priority",
+                "status",
+                "staff",
+                "submitted",
+            ),
             show="headings",
         )
 
@@ -57,6 +67,7 @@ class MaintenanceHome(tk.Frame):
             ("desc", "Description"),
             ("priority", "Priority"),
             ("status", "Status"),
+            ("staff", "Assigned Staff"),
             ("submitted", "Submitted At"),
         ]:
             self.table.heading(col, text=text)
@@ -66,40 +77,40 @@ class MaintenanceHome(tk.Frame):
         self.load_data()
 
     def load_data(self):
+        """Load all maintenance requests."""
         db = get_session()
         service = MaintenanceService(db)
         rows = service.get_all_requests()
-
-        extracted = [
-            (
-                r["tenant_name"],
-                r["apartment_label"],
-                r["description"],
-                r["priority"],
-                r["status"],
-                r["submitted_at"],
-            )
-            for r in rows
-        ]
-
         db.close()
 
-        for row in extracted:
-            self.table.insert("", "end", values=row)
+        for r in rows:
+            self.table.insert(
+                "",
+                "end",
+                values=(
+                    r["tenant_name"],
+                    r["apartment_label"],
+                    r["description"],
+                    r["priority"],
+                    r["status"],
+                    r["assigned_staff"],
+                    r["submitted_at"],
+                ),
+            )
 
     def refresh_table(self):
-        for item in self.table.get_children():
-            self.table.delete(item)
+        """Clear and reload table."""
+        self.table.delete(*self.table.get_children())
         self.load_data()
 
     def open_create_page(self):
         from ui.maintenance.create_request_page import CreateRequestPage
-        self.main_window.load_page(CreateRequestPage)
+        self.main_window.load_page(lambda parent, mw: CreateRequestPage(parent, mw))
 
     def open_update_page(self):
         from ui.maintenance.update_request_page import UpdateRequestPage
-        self.main_window.load_page(UpdateRequestPage)
+        self.main_window.load_page(lambda parent, mw: UpdateRequestPage(parent, mw))
 
     def open_list_page(self):
         from ui.maintenance.maintenance_list_page import MaintenanceListPage
-        self.main_window.load_page(MaintenanceListPage)
+        self.main_window.load_page(lambda parent, mw: MaintenanceListPage(parent, mw))

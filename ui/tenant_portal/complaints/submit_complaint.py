@@ -62,9 +62,10 @@ class SubmitComplaint(tk.Frame):
 
         if ok:
             messagebox.showinfo("Success", "Complaint submitted.")
+            self.desc_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to submit complaint.")
 
     def go_back(self):
         from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))

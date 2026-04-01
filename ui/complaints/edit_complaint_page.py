@@ -15,14 +15,16 @@ class EditComplaintPage(tk.Frame):
 
         tk.Label(self, text="Edit Complaint", font=("Arial", 22)).pack(pady=20)
 
+        # complaint selector
         select_frame = tk.Frame(self)
         select_frame.pack(pady=5)
 
         tk.Label(select_frame, text="Select Complaint:").grid(row=0, column=0, sticky="e")
-        self.complaint_combo = ttk.Combobox(select_frame, state="readonly", width=45)
+        self.complaint_combo = ttk.Combobox(select_frame, state="readonly", width=55)
         self.complaint_combo.grid(row=0, column=1, padx=5, pady=5)
         self.complaint_combo.bind("<<ComboboxSelected>>", self.on_select)
 
+        # form fields
         form = tk.Frame(self)
         form.pack(pady=10)
 
@@ -39,15 +41,28 @@ class EditComplaintPage(tk.Frame):
         self.notes_entry = tk.Entry(form, width=45)
         self.notes_entry.grid(row=1, column=1, padx=5, pady=5)
 
+        # buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=15)
 
-        tk.Button(btn_frame, text="Save Changes", width=18, command=self.save).grid(row=0, column=0, padx=5)
-        tk.Button(btn_frame, text="Back", width=10, command=self.go_back).grid(row=0, column=1, padx=5)
+        tk.Button(
+            btn_frame,
+            text="Save Changes",
+            width=18,
+            command=self.save,
+        ).grid(row=0, column=0, padx=5)
+
+        tk.Button(
+            btn_frame,
+            text="Back",
+            width=10,
+            command=self.go_back,
+        ).grid(row=0, column=1, padx=5)
 
         self._load_complaints()
 
     def _load_complaints(self):
+        """Load all complaints."""
         db = get_session()
         service = ComplaintService(db)
         rows = service.get_all_complaints()
@@ -62,6 +77,7 @@ class EditComplaintPage(tk.Frame):
         self.complaint_combo["values"] = list(self.complaint_map.keys())
 
     def on_select(self, event=None):
+        """Load selected complaint details."""
         label = self.complaint_combo.get()
         if not label:
             return
@@ -86,6 +102,7 @@ class EditComplaintPage(tk.Frame):
             self.notes_entry.insert(0, comp["notes"])
 
     def save(self):
+        """Save updated complaint details."""
         if not self.current_complaint_id:
             messagebox.showerror("Error", "Select a complaint first.")
             return
@@ -104,5 +121,6 @@ class EditComplaintPage(tk.Frame):
             messagebox.showerror("Error", "Failed to update complaint.")
 
     def go_back(self):
+        """Return to complaints home."""
         from ui.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))

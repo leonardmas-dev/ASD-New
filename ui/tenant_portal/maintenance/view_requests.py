@@ -6,38 +6,49 @@ from backend.maintenance_service import MaintenanceService
 
 
 class ViewMaintenanceRequestsPage(tk.Frame):
-    """Displays all maintenance requests submitted by the tenant."""
+    """Read-only list of maintenance requests submitted by the tenant."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
         self.main_window = main_window
         self.session = main_window.user_session
-        tenant_id = self.session.tenant_id
 
-        tk.Label(self, text="My Maintenance Requests", font=("Arial", 20, "bold")).pack(pady=20)
+        tk.Label(self, text="My Maintenance Requests", font=("Arial", 22)).pack(pady=20)
 
         table_frame = tk.Frame(self)
         table_frame.pack(fill="both", expand=True, pady=10)
 
         self.table = ttk.Treeview(
             table_frame,
-            columns=("status", "date", "category", "priority", "description"),
+            columns=(
+                "status",
+                "submitted",
+                "scheduled",
+                "priority",
+                "staff",
+                "notes",
+                "description",
+            ),
             show="headings",
             height=15,
         )
 
         self.table.heading("status", text="Status")
-        self.table.heading("date", text="Date")
-        self.table.heading("category", text="Category")
+        self.table.heading("submitted", text="Submitted At")
+        self.table.heading("scheduled", text="Scheduled Date")
         self.table.heading("priority", text="Priority")
+        self.table.heading("staff", text="Assigned Staff")
+        self.table.heading("notes", text="Staff Notes")
         self.table.heading("description", text="Description")
 
         self.table.column("status", width=120)
-        self.table.column("date", width=150)
-        self.table.column("category", width=120)
-        self.table.column("priority", width=80)
-        self.table.column("description", width=350)
+        self.table.column("submitted", width=150)
+        self.table.column("scheduled", width=150)
+        self.table.column("priority", width=100)
+        self.table.column("staff", width=150)
+        self.table.column("notes", width=200)
+        self.table.column("description", width=300)
 
         self.table.pack(fill="both", expand=True)
 
@@ -55,25 +66,30 @@ class ViewMaintenanceRequestsPage(tk.Frame):
 
         db = get_session()
         service = MaintenanceService(db)
+        rows = service.get_requests_for_tenant(self.session.tenant_id)
+        db.close()
 
-        try:
-            requests = service.get_requests_for_tenant(self.session.tenant_id)
-        finally:
-            db.close()
+        for r in rows:
+            scheduled = (
+                r["scheduled_date"].strftime("%Y-%m-%d %H:%M")
+                if r["scheduled_date"]
+                else ""
+            )
 
-        for r in requests:
             self.table.insert(
                 "",
                 "end",
                 values=(
                     r["status"],
-                    r["created_at"],
-                    r["category"],
+                    r["submitted_at"].strftime("%Y-%m-%d %H:%M") if r["submitted_at"] else "",
+                    scheduled,
                     r["priority"],
+                    r["assigned_staff"] or "",
+                    r["notes"] or "",
                     r["description"],
                 ),
             )
 
     def go_back(self):
         from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
-        self.main_window.load_page(MaintenanceHome)
+        self.main_window.load_page(lambda parent, mw: MaintenanceHome(parent, mw))

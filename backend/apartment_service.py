@@ -152,7 +152,7 @@ class ApartmentService:
             print(f"Update Error: {e}")
             return False
 
-    # hard delete (matches original behaviour)
+    # hard delete
     def delete_apartment(self, apt_id: int) -> bool:
         try:
             a = (

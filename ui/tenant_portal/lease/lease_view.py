@@ -13,7 +13,6 @@ class LeaseView(tk.Frame):
 
         self.main_window = main_window
         self.session = main_window.user_session
-        tenant_id = self.session.tenant_id
 
         tk.Label(self, text="My Lease Details", font=("Arial", 22)).pack(pady=20)
 
@@ -89,4 +88,4 @@ class LeaseView(tk.Frame):
 
     def go_home(self):
         from ui.tenant_portal.tenant_dashboard import TenantDashboard
-        self.main_window.load_page(TenantDashboard)
+        self.main_window.load_page(lambda parent, mw: TenantDashboard(parent, mw))

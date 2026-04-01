@@ -18,7 +18,6 @@ class PaymentService:
             if not lease or not lease.is_active:
                 return False
 
-            # prevent duplicate payments for same due date
             existing = (
                 self.db.query(Payment)
                 .filter(Payment.lease_id == lease_id, Payment.due_date == due_date)
@@ -57,7 +56,6 @@ class PaymentService:
             if not pay:
                 return False
 
-            # block payments on inactive leases (UI already prevents this)
             if not pay.lease.is_active:
                 return False
 
@@ -81,7 +79,7 @@ class PaymentService:
             print(f"Record Payment Error: {e}")
             return False
 
-    # staff view: all payments (history)
+    # view all payments
     def get_all_payments(self) -> List[Dict]:
         try:
             rows = (
@@ -118,7 +116,7 @@ class PaymentService:
             print(f"Fetch Payments Error: {e}")
             return []
 
-    # tenant view: payments for their lease(s)
+    # current payments table
     def get_payments_for_tenant(self, tenant_id: int) -> List[Dict]:
         try:
             rows = (
@@ -150,38 +148,60 @@ class PaymentService:
             print(f"Fetch Tenant Payments Error: {e}")
             return []
 
-    # tenant graph: monthly totals
-    def get_monthly_payment_summary(self, tenant_id: int) -> List[Dict]:
+    # payment history (used by tenant_portal/payment_history.py)
+    class _PaymentHistoryRow:
+        def __init__(self, p: Payment):
+            self.payment_id = p.payment_id
+            self.amount_due = p.amount_due
+            self.amount_paid = p.amount_paid
+            self.due_date = p.due_date
+            self.paid_at = p.payment_date
+            self.status = p.status
+            self.late_fee = p.late_fee
+            self.is_late = p.is_late
+
+    def get_payment_history_for_tenant(self, tenant_id: int):
         try:
             rows = (
-                self.db.query(
-                    func.strftime("%Y-%m", Payment.due_date).label("month"),
-                    func.sum(Payment.amount_paid).label("paid"),
-                    func.sum(Payment.amount_due).label("due"),
-                )
+                self.db.query(Payment)
                 .join(Lease, Payment.lease_id == Lease.lease_id)
                 .filter(Lease.tenant_id == tenant_id)
-                .group_by("month")
-                .order_by("month")
+                .order_by(Payment.due_date.desc())
+                .all()
+            )
+            return [self._PaymentHistoryRow(p) for p in rows]
+
+        except Exception as e:
+            print(f"Tenant Payment History Error: {e}")
+            return []
+
+    # payment sequence for graphing (Payment 1, Payment 2, Payment 3 etc.)
+    def get_payment_sequence_for_tenant(self, tenant_id: int):
+        try:
+            rows = (
+                self.db.query(Payment)
+                .join(Lease, Payment.lease_id == Lease.lease_id)
+                .filter(Lease.tenant_id == tenant_id)
+                .order_by(Payment.payment_id.asc())
                 .all()
             )
 
             data = []
-            for month, paid, due in rows:
-                data.append(
-                    {
-                        "month": month,
-                        "paid": paid or 0,
-                        "due": due or 0,
-                    }
-                )
+            for idx, p in enumerate(rows, start=1):
+                data.append({
+                    "index": idx,
+                    "paid": float(p.amount_paid or 0),
+                    "due": float(p.amount_due or 0),
+                    "status": p.status
+                })
+
             return data
 
         except Exception as e:
-            print(f"Monthly Summary Error: {e}")
+            print(f"Payment Sequence Error: {e}")
             return []
 
-    # tenant graph: neighbour comparison
+    #neighbour comparison
     def get_neighbour_comparison(self, tenant_id: int) -> Dict:
         try:
             tenant_total = (

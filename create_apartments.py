@@ -3,7 +3,7 @@ from database.models import Apartment, Location
 
 def seed_apartments():
     db = get_session()
-
+# Here I just made some apartments to pre populate database
     locations = db.query(Location).all()
     if not locations:
         print("ERROR: No locations found. Run create_locations.py first.")

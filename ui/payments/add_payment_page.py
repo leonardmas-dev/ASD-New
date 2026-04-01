@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
-
 from backend.payment_service import PaymentService
 from database.session import get_session
 from database.models import Lease, Tenant, Apartment

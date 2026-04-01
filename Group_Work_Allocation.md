@@ -29,10 +29,6 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 - `ui/tenants/edit_tenant_page.py`
 - `ui/tenants/tenant_list_page.py`
 - `ui/tenant_portal/tenant_dashboard.py`
-- `ui/tenant_portal/tenant_payments_page.py`
-- `ui/tenant_portal/tenant_complaints_page.py`
-- `ui/tenant_portal/tenant_maintenance_page.py`
-- `ui/tenant_portal/tenant_payment_graphs_page.py`
 
 **Backend Files**
 
@@ -43,12 +39,11 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 - Tenant CRUD (Create, Read, Update, Delete)
 - Tenant portal dashboard
-- View own payment history
-- Submit complaints
-- Submit maintenance requests
-- Payment history graphs
-- “Tenant vs neighbours” style graphs (if implemented)
+- Allow creation of Tenant Accounts
+- Allow viewing of tenant_accounts
+- Allow tenant account details to be modified
 - Work with Person 2 to link tenants and leases
+- Ensuring tenant_portal is fully functional once complete
 
 ---
 
@@ -58,6 +53,7 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 - `ui/apartments/`
 - `ui/leases/`
+- `ui/tenant_portal/lease`
 
 **UI Files**
 
@@ -69,6 +65,7 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 - `ui/leases/add_lease_page.py`
 - `ui/leases/edit_lease_page.py`
 - `ui/leases/lease_list_page.py`
+- `ui/tenant_portal/lease/lease_view.py`
 
 **Backend Files**
 
@@ -91,17 +88,22 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 **UI Folder**
 
 - `ui/payments/`
+- `ui/tenant_portal/payments`
 
 **UI Files**
 
 - `ui/payments/payments_home.py`
 - `ui/payments/record_payment_page.py`
 - `ui/payments/payment_history_page.py`
+- `ui/tenant_portal/payments/payment_graphs.py`
+- `ui/tenant_portal/payments/payment_history.py`
+- `ui/tenant_portal/payments/payment_make.py`
+- `ui/tenant_portal/payments/payment_home.py`
 
 **Backend Files**
 
 - `backend/payment_service.py`
-- `backend/report_service.py` (financial reporting parts)
+- `backend/report_service.py` (e.g. financial reporting, maintenance reports etc.)
 
 **Responsibilities**
 
@@ -122,6 +124,8 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 - `ui/maintenance/`
 - `ui/complaints/`
+- `ui/tenant_portal/maintenance/`
+- `ui/tenant_portal/complaints`
 
 **UI Files**
 
@@ -132,6 +136,12 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 - `ui/complaints/complaints_home.py`
 - `ui/complaints/add_complaint_page.py`
 - `ui/complaints/complaint_list_page.py`
+- `ui/tenant_portal/maintenance/maintenance_home.py`
+- `ui/tenant_portal/maintenance/submit_request.py`
+- `ui/tenant_portal/maintenance/view_requests.py`
+- `ui/tenant_portal/complaints/complaints_home.py`
+- `ui/tenant_portal/complaints/submit_complaint.py`
+- `ui/tenant_portal/complaints/view_complaints.py`
 
 **Backend Files**
 
@@ -156,6 +166,17 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 
 - `ui/user_management/`
 - `ui/reports/`
+- `ui/`
+- `backend/`
+- `database/`
+
+**DataBase Files**
+
+- `database/create_database.py`
+- `database/database_information.md`
+- `database/database_manager.py`
+- `database/models.py`
+- `database/session.py`
 
 **UI Files**
 
@@ -183,8 +204,6 @@ Each one of us owns a complete module (UI + backend + logic), so everyone can wo
 **Utils**
 
 - `utils/config.py`
-- `utils/validators.py`
-- `utils/helpers.py`
 
 **Responsibilities**
 

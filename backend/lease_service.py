@@ -28,7 +28,6 @@ class LeaseService:
             monthly_rent = int(float(rent))
             deposit_amount = int(float(deposit))
 
-            # basic existence check
             tenant = (
                 self.db.query(Tenant)
                 .filter(Tenant.tenant_id == t_id, Tenant.is_active == True)
@@ -45,7 +44,6 @@ class LeaseService:
             if not tenant or not apt:
                 return False
 
-            # simple month approximation (30 days * months)
             start_dt = datetime.strptime(start_date, "%Y-%m-%d")
             end_dt = start_dt + timedelta(days=months * 30)
 
@@ -60,7 +58,6 @@ class LeaseService:
             )
             self.db.add(lease)
 
-            # occupancy flip
             apt.is_available = False
 
             self.db.commit()
@@ -70,7 +67,6 @@ class LeaseService:
             print(f"Create Lease Error: {e}")
             return False
 
-    # list active leases with tenant names
     def get_all_leases(self) -> List[Dict]:
         try:
             leases = (
@@ -101,7 +97,6 @@ class LeaseService:
             print(f"Fetch Leases Error: {e}")
             return []
 
-    # early termination with 5% penalty and availability flip
     def terminate_lease(self, lease_id: int, apartment_id: int) -> Optional[float]:
         try:
             lease = (

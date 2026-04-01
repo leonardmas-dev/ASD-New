@@ -1,14 +1,11 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import re
-
 from database.session import get_session
 from database.models import User, Location
 from passlib.hash import bcrypt
 
-
 ROLES = ["FrontDesk", "FinanceManager", "MaintenanceStaff", "Manager"]
-
 
 class EditUserPage(tk.Frame):
     """Edit staff user account with full validation."""

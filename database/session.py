@@ -5,7 +5,7 @@ from utils.config import DB_URL
 # Create the engine once
 engine = create_engine(DB_URL, echo=False)
 
-# Create a session factory
+# Create a session
 SessionLocal = sessionmaker(bind=engine)
 
 # Function to get a new session

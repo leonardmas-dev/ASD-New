@@ -14,7 +14,6 @@ class Navigation:
     def build_menu(self):
         """Build sidebar menu based on user role."""
 
-        # Staff
         staff_menus = {
             "Admin": [
                 ("Home", self.load_home),
@@ -33,6 +32,7 @@ class Navigation:
                 ("Home", self.load_home),
                 ("Tenants", self.load_tenants),
                 ("Leases", self.load_leases),
+                ("Payments", self.load_payments),
                 ("Maintenance", self.load_maintenance_staff),
                 ("Complaints", self.load_complaints_staff),
                 ("Logout", self.logout),
@@ -60,12 +60,10 @@ class Navigation:
             ],
         }
 
-        # Tenants
         tenant_menu = [
             ("Home", self.load_home),
             ("My Lease", self.load_lease_tenant),
             ("Payments", self.load_payments_tenant),
-            ("Payment Graphs", self.load_payment_graphs_tenant),
             ("My Maintenance", self.load_maintenance_tenant),
             ("My Complaints", self.load_complaints_tenant),
             ("Logout", self.logout),
@@ -81,7 +79,7 @@ class Navigation:
                 self.parent,
                 text=text,
                 command=command,
-                bg="#34495e",
+                bg="#13325E",
                 fg="white",
                 relief="flat",
                 height=2
@@ -91,64 +89,60 @@ class Navigation:
     def load_home(self):
         if self.session.role == "Tenant":
             from ui.tenant_portal.tenant_dashboard import TenantDashboard
-            self.main_window.load_page(TenantDashboard)
+            self.main_window.load_page(lambda parent, mw: TenantDashboard(parent, mw))
         else:
             from ui.home_page import HomePage
-            self.main_window.load_page(HomePage)
+            self.main_window.load_page(lambda parent, mw: HomePage(parent, mw))
 
     # Staff loaders
     def load_tenants(self):
         from ui.tenants.tenants_home import TenantsHome
-        self.main_window.load_page(TenantsHome)
+        self.main_window.load_page(lambda parent, mw: TenantsHome(parent, mw))
 
     def load_apartments(self):
         from ui.apartments.apartments_home import ApartmentsHome
-        self.main_window.load_page(ApartmentsHome)
+        self.main_window.load_page(lambda parent, mw: ApartmentsHome(parent, mw))
 
     def load_leases(self):
         from ui.leases.leases_home import LeasesHome
-        self.main_window.load_page(LeasesHome)
+        self.main_window.load_page(lambda parent, mw: LeasesHome(parent, mw))
 
     def load_payments(self):
         from ui.payments.payments_home import PaymentsHome
-        self.main_window.load_page(PaymentsHome)
+        self.main_window.load_page(lambda parent, mw: PaymentsHome(parent, mw))
 
     def load_maintenance_staff(self):
         from ui.maintenance.maintenance_home import MaintenanceHome
-        self.main_window.load_page(MaintenanceHome)
+        self.main_window.load_page(lambda parent, mw: MaintenanceHome(parent, mw))
 
     def load_complaints_staff(self):
         from ui.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))
 
     def load_reports(self):
         from ui.reports.reports_home import ReportsHome
-        self.main_window.load_page(ReportsHome)
+        self.main_window.load_page(lambda parent, mw: ReportsHome(parent, mw))
 
     def load_users(self):
         from ui.user_management.users_home import UsersHomePage
-        self.main_window.load_page(UsersHomePage)
+        self.main_window.load_page(lambda parent, mw: UsersHomePage(parent, mw))
 
-    # Loaders for tenants
+    # Tenant loaders
     def load_lease_tenant(self):
         from ui.tenant_portal.lease.lease_view import LeaseView
-        self.main_window.load_page(LeaseView)
+        self.main_window.load_page(lambda parent, mw: LeaseView(parent, mw))
 
     def load_payments_tenant(self):
         from ui.tenant_portal.payments.payments_home import PaymentsHome
-        self.main_window.load_page(PaymentsHome)
-
-    def load_payment_graphs_tenant(self):
-        from ui.tenant_portal.payments.payment_graphs import PaymentGraphs
-        self.main_window.load_page(PaymentGraphs)
+        self.main_window.load_page(lambda parent, mw: PaymentsHome(parent, mw))
 
     def load_maintenance_tenant(self):
         from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
-        self.main_window.load_page(MaintenanceHome)
+        self.main_window.load_page(lambda parent, mw: MaintenanceHome(parent, mw))
 
     def load_complaints_tenant(self):
         from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
-        self.main_window.load_page(ComplaintsHome)
+        self.main_window.load_page(lambda parent, mw: ComplaintsHome(parent, mw))
 
     # Logout
     def logout(self):
