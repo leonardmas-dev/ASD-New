@@ -6,18 +6,19 @@ from database.session import get_session
 
 
 class PaymentGraphs(tk.Frame):
-    """Tenant payment graphs + neighbour comparison."""
+    """Tenant payment summary + neighbour comparison."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
         self.session = main_window.user_session
+        tenant_id = self.session.tenant_id
 
         db = get_session()
         service = PaymentService(db)
 
-        monthly = service.get_monthly_payment_summary(self.session.tenant_id)
-        compare = service.get_neighbour_comparison(self.session.tenant_id)
+        monthly = service.get_monthly_payment_summary(tenant_id)
+        compare = service.get_neighbour_comparison(tenant_id)
 
         db.close()
 
@@ -36,3 +37,13 @@ class PaymentGraphs(tk.Frame):
 
         tk.Label(self, text=f"Your Total Paid: £{compare['tenant_total']}", font=("Arial", 14)).pack()
         tk.Label(self, text=f"Neighbour Average: £{compare['neighbours_avg']}", font=("Arial", 14)).pack()
+
+        tk.Button(
+            self,
+            text="Back",
+            command=lambda: self.go_back(main_window),
+        ).pack(pady=20)
+
+    def go_back(self, main_window):
+        from ui.tenant_portal.payments.payments_home import PaymentsHome
+        main_window.load_page(PaymentsHome)

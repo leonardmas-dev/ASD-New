@@ -126,8 +126,8 @@ class Navigation:
         self.main_window.load_page(ReportsHome)
 
     def load_users(self):
-        from ui.user_management.users_home import UsersHome
-        self.main_window.load_page(UsersHome)
+        from ui.user_management.users_home import UsersHomePage
+        self.main_window.load_page(UsersHomePage)
 
     # Loaders for tenants
     def load_lease_tenant(self):

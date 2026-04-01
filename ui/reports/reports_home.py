@@ -13,7 +13,6 @@ class ReportsHome(tk.Frame):
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
-        # financial report
         tk.Button(
             btn_frame,
             text="Financial Report",
@@ -21,7 +20,6 @@ class ReportsHome(tk.Frame):
             command=self.open_financial_report
         ).grid(row=0, column=0, padx=5, pady=5)
 
-        # maintenance report
         tk.Button(
             btn_frame,
             text="Maintenance Report",
@@ -29,7 +27,6 @@ class ReportsHome(tk.Frame):
             command=self.open_maintenance_report
         ).grid(row=1, column=0, padx=5, pady=5)
 
-        # occupancy report
         tk.Button(
             btn_frame,
             text="Occupancy Report",
@@ -37,17 +34,14 @@ class ReportsHome(tk.Frame):
             command=self.open_occupancy_report
         ).grid(row=2, column=0, padx=5, pady=5)
 
-    # open financial report
     def open_financial_report(self):
         from ui.reports.financial_report_page import FinancialReportPage
         self.main_window.load_page(FinancialReportPage)
 
-    # open maintenance report
     def open_maintenance_report(self):
         from ui.reports.maintenance_report_page import MaintenanceReportPage
         self.main_window.load_page(MaintenanceReportPage)
 
-    # open occupancy report
     def open_occupancy_report(self):
         from ui.reports.occupancy_report_page import OccupancyReportPage
         self.main_window.load_page(OccupancyReportPage)

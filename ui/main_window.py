@@ -14,13 +14,18 @@ class MainWindow(tk.Tk):
 
         self.user_id = user_id
         self.user_session = self._load_user_session()
+
+        # Sidebar
         self.nav = Navigation(self.sidebar_frame(), self)
+
+        # Main content area
         self.content_frame = tk.Frame(self)
         self.content_frame.pack(side="right", fill="both", expand=True)
+
         self.current_page = None
         self._load_initial_page()
 
-    def _load_user_session(self): #user session
+    def _load_user_session(self):
         """Load user role and tenant_id (if applicable)."""
         db = get_session()
         user = db.query(User).filter(User.user_id == self.user_id).first()
@@ -37,8 +42,6 @@ class MainWindow(tk.Tk):
         db.close()
         return session
 
-    # Navigation bar
-
     def sidebar_frame(self):
         """Create and return the sidebar frame."""
         sidebar = tk.Frame(self, width=220, bg="#2c3e50")
@@ -54,10 +57,10 @@ class MainWindow(tk.Tk):
             from ui.home_page import HomePage
             self.load_page(HomePage)
 
-    def load_page(self, page_class, *args):
+    def load_page(self, page_class):
         """Destroy current page and load a new one."""
         if self.current_page:
             self.current_page.destroy()
 
-        self.current_page = page_class(self.content_frame, self, *args)
+        self.current_page = page_class(self.content_frame, self)
         self.current_page.pack(fill="both", expand=True)

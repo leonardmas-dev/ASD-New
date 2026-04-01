@@ -6,12 +6,14 @@ from database.session import get_session
 
 
 class MaintenanceListPage(tk.Frame):
-    """List of maintenance requests for selection."""
+    """Read-only list of maintenance requests."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
-        tk.Label(self, text="Select Maintenance Request", font=("Arial", 22)).pack(pady=20)
+        self.main_window = main_window
+
+        tk.Label(self, text="Maintenance Request List", font=("Arial", 22)).pack(pady=20)
 
         self.table = ttk.Treeview(
             self,
@@ -28,6 +30,13 @@ class MaintenanceListPage(tk.Frame):
             self.table.heading(col, text=text)
 
         self.table.pack(fill="both", expand=True, pady=10)
+
+        tk.Button(
+            self,
+            text="Back",
+            command=self.go_back,
+            width=10,
+        ).pack(pady=15)
 
         self.load_data()
 
@@ -48,3 +57,7 @@ class MaintenanceListPage(tk.Frame):
                     r["status"],
                 ),
             )
+
+    def go_back(self):
+        from ui.maintenance.maintenance_home import MaintenanceHome
+        self.main_window.load_page(MaintenanceHome)

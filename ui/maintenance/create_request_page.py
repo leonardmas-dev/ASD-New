@@ -12,29 +12,44 @@ class CreateRequestPage(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
+        self.main_window = main_window
+
         tk.Label(self, text="Create Maintenance Request", font=("Arial", 22)).pack(pady=20)
 
         form = tk.Frame(self)
         form.pack(pady=10)
 
         tk.Label(form, text="Tenant:").grid(row=0, column=0, sticky="e")
-        self.tenant_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.tenant_combo = ttk.Combobox(form, state="readonly", width=35)
         self.tenant_combo.grid(row=0, column=1, padx=5, pady=5)
 
         tk.Label(form, text="Apartment:").grid(row=1, column=0, sticky="e")
-        self.apartment_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.apartment_combo = ttk.Combobox(form, state="readonly", width=35)
         self.apartment_combo.grid(row=1, column=1, padx=5, pady=5)
 
         tk.Label(form, text="Description:").grid(row=2, column=0, sticky="e")
-        self.desc_entry = tk.Entry(form, width=40)
+        self.desc_entry = tk.Entry(form, width=45)
         self.desc_entry.grid(row=2, column=1, padx=5, pady=5)
 
         tk.Label(form, text="Priority:").grid(row=3, column=0, sticky="e")
-        self.priority_combo = ttk.Combobox(form, values=["Low", "Medium", "High"], state="readonly")
-        self.priority_combo.grid(row=3, column=1, padx=5, pady=5)
+        self.priority_combo = ttk.Combobox(
+            form,
+            values=["Low", "Medium", "High"],
+            state="readonly",
+            width=15,
+        )
+        self.priority_combo.grid(row=3, column=1, padx=5, pady=5, sticky="w")
         self.priority_combo.set("Medium")
 
-        tk.Button(self, text="Create Request", command=self.save).pack(pady=15)
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Create Request", command=self.save, width=18).grid(
+            row=0, column=0, padx=5
+        )
+        tk.Button(btn_frame, text="Back", command=self.go_back, width=10).grid(
+            row=0, column=1, padx=5
+        )
 
         self._load_dropdowns()
 
@@ -46,9 +61,13 @@ class CreateRequestPage(tk.Frame):
 
         db.close()
 
-        self.tenant_map = {f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id for t in tenants}
+        self.tenant_map = {
+            f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id
+            for t in tenants
+        }
         self.apartment_map = {
-            f"{a.apartment_id} - {a.location.city}": a.apartment_id for a in apartments
+            f"{a.apartment_id} - {a.location.city} ({a.apartment_type})": a.apartment_id
+            for a in apartments
         }
 
         self.tenant_combo["values"] = list(self.tenant_map.keys())
@@ -60,17 +79,23 @@ class CreateRequestPage(tk.Frame):
             messagebox.showerror("Error", "Enter a description.")
             return
 
+        tenant_label = self.tenant_combo.get()
+        apartment_label = self.apartment_combo.get()
+        priority = self.priority_combo.get()
+
+        if not tenant_label or not apartment_label or not priority:
+            messagebox.showerror("Error", "Select tenant, apartment, and priority.")
+            return
+
         try:
-            tenant_id = self.tenant_map[self.tenant_combo.get()]
-            apartment_id = self.apartment_map[self.apartment_combo.get()]
-            priority = self.priority_combo.get()
-        except Exception:
+            tenant_id = self.tenant_map[tenant_label]
+            apartment_id = self.apartment_map[apartment_label]
+        except KeyError:
             messagebox.showerror("Error", "Invalid selection.")
             return
 
         db = get_session()
 
-        # ensure tenant has an active lease for that apartment
         lease = (
             db.query(Lease)
             .filter(
@@ -93,5 +118,10 @@ class CreateRequestPage(tk.Frame):
 
         if ok:
             messagebox.showinfo("Success", "Request created.")
+            self.desc_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to create request.")
+
+    def go_back(self):
+        from ui.maintenance.maintenance_home import MaintenanceHome
+        self.main_window.load_page(MaintenanceHome)

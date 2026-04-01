@@ -11,6 +11,7 @@ class AddComplaintPage(tk.Frame):
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+        self.main_window = main_window
 
         tk.Label(self, text="Add Complaint", font=("Arial", 22)).pack(pady=20)
 
@@ -18,18 +19,22 @@ class AddComplaintPage(tk.Frame):
         form.pack(pady=10)
 
         tk.Label(form, text="Tenant:").grid(row=0, column=0, sticky="e")
-        self.tenant_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.tenant_combo = ttk.Combobox(form, state="readonly", width=35)
         self.tenant_combo.grid(row=0, column=1, padx=5, pady=5)
 
         tk.Label(form, text="Apartment:").grid(row=1, column=0, sticky="e")
-        self.apartment_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.apartment_combo = ttk.Combobox(form, state="readonly", width=35)
         self.apartment_combo.grid(row=1, column=1, padx=5, pady=5)
 
         tk.Label(form, text="Description:").grid(row=2, column=0, sticky="e")
-        self.desc_entry = tk.Entry(form, width=40)
+        self.desc_entry = tk.Entry(form, width=45)
         self.desc_entry.grid(row=2, column=1, padx=5, pady=5)
 
-        tk.Button(self, text="Create Complaint", command=self.save).pack(pady=15)
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Create Complaint", width=18, command=self.save).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="Back", width=10, command=self.go_back).grid(row=0, column=1, padx=5)
 
         self._load_dropdowns()
 
@@ -41,9 +46,14 @@ class AddComplaintPage(tk.Frame):
 
         db.close()
 
-        self.tenant_map = {f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id for t in tenants}
+        self.tenant_map = {
+            f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id
+            for t in tenants
+        }
+
         self.apartment_map = {
-            f"{a.apartment_id} - {a.location.city}": a.apartment_id for a in apartments
+            f"{a.apartment_id} - {a.location.city} ({a.apartment_type})": a.apartment_id
+            for a in apartments
         }
 
         self.tenant_combo["values"] = list(self.tenant_map.keys())
@@ -55,16 +65,18 @@ class AddComplaintPage(tk.Frame):
             messagebox.showerror("Error", "Enter a description.")
             return
 
-        try:
-            tenant_id = self.tenant_map[self.tenant_combo.get()]
-            apartment_id = self.apartment_map[self.apartment_combo.get()]
-        except Exception:
-            messagebox.showerror("Error", "Invalid selection.")
+        tenant_label = self.tenant_combo.get()
+        apartment_label = self.apartment_combo.get()
+
+        if not tenant_label or not apartment_label:
+            messagebox.showerror("Error", "Select tenant and apartment.")
             return
+
+        tenant_id = self.tenant_map.get(tenant_label)
+        apartment_id = self.apartment_map.get(apartment_label)
 
         db = get_session()
 
-        # ensure tenant has an active lease for that apartment
         lease = (
             db.query(Lease)
             .filter(
@@ -87,5 +99,10 @@ class AddComplaintPage(tk.Frame):
 
         if ok:
             messagebox.showinfo("Success", "Complaint created.")
+            self.desc_entry.delete(0, tk.END)
         else:
             messagebox.showerror("Error", "Failed to create complaint.")
+
+    def go_back(self):
+        from ui.complaints.complaints_home import ComplaintsHome
+        self.main_window.load_page(ComplaintsHome)

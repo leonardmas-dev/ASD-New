@@ -12,14 +12,23 @@ class SubmitRequest(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
+        self.main_window = main_window
         self.session = main_window.user_session
+        tenant_id = self.session.tenant_id
 
         tk.Label(self, text="Submit Maintenance Request", font=("Arial", 22)).pack(pady=20)
 
-        self.desc_entry = tk.Entry(self, width=50)
+        tk.Label(self, text="Describe the issue:").pack()
+        self.desc_entry = tk.Entry(self, width=60)
         self.desc_entry.pack(pady=5)
 
         tk.Button(self, text="Submit", command=self.submit).pack(pady=10)
+
+        tk.Button(
+            self,
+            text="Back",
+            command=self.go_back
+        ).pack(pady=10)
 
     def submit(self):
         desc = self.desc_entry.get().strip()
@@ -31,7 +40,10 @@ class SubmitRequest(tk.Frame):
 
         lease = (
             db.query(Lease)
-            .filter(Lease.tenant_id == self.session.tenant_id, Lease.is_active == True)
+            .filter(
+                Lease.tenant_id == self.session.tenant_id,
+                Lease.is_active == True
+            )
             .first()
         )
 
@@ -53,3 +65,7 @@ class SubmitRequest(tk.Frame):
             messagebox.showinfo("Success", "Request submitted.")
         else:
             messagebox.showerror("Error", "Failed to submit request.")
+
+    def go_back(self):
+        from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
+        self.main_window.load_page(MaintenanceHome)

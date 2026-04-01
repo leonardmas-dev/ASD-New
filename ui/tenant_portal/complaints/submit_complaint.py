@@ -12,14 +12,22 @@ class SubmitComplaint(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
+        self.main_window = main_window
         self.session = main_window.user_session
 
         tk.Label(self, text="Submit Complaint", font=("Arial", 22)).pack(pady=20)
 
-        self.desc_entry = tk.Entry(self, width=50)
+        tk.Label(self, text="Describe the issue:").pack()
+        self.desc_entry = tk.Entry(self, width=60)
         self.desc_entry.pack(pady=5)
 
         tk.Button(self, text="Submit", command=self.submit).pack(pady=10)
+
+        tk.Button(
+            self,
+            text="Back",
+            command=self.go_back
+        ).pack(pady=10)
 
     def submit(self):
         desc = self.desc_entry.get().strip()
@@ -31,7 +39,10 @@ class SubmitComplaint(tk.Frame):
 
         lease = (
             db.query(Lease)
-            .filter(Lease.tenant_id == self.session.tenant_id, Lease.is_active == True)
+            .filter(
+                Lease.tenant_id == self.session.tenant_id,
+                Lease.is_active == True
+            )
             .first()
         )
 
@@ -53,3 +64,7 @@ class SubmitComplaint(tk.Frame):
             messagebox.showinfo("Success", "Complaint submitted.")
         else:
             messagebox.showerror("Error", "Failed to submit complaint.")
+
+    def go_back(self):
+        from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
+        self.main_window.load_page(ComplaintsHome)

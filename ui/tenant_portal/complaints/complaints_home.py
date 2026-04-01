@@ -12,10 +12,10 @@ class ComplaintsHome(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
         self.session = main_window.user_session
+        tenant_id = self.session.tenant_id
 
         tk.Label(self, text="My Complaints", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -39,7 +39,6 @@ class ComplaintsHome(tk.Frame):
             command=self.go_home
         ).pack(pady=10)
 
-        # table
         self.table = ttk.Treeview(
             self,
             columns=("desc", "status", "submitted"),
@@ -52,37 +51,29 @@ class ComplaintsHome(tk.Frame):
 
         self.load_complaints()
 
-    # load tenant complaints
     def load_complaints(self):
         db = get_session()
         service = ComplaintService(db)
         rows = service.get_complaints_for_tenant(self.session.tenant_id)
 
-        # extract before closing session
-        comp_rows = []
-        for r in rows:
-            comp_rows.append((
-                r["description"],
-                r["status"],
-                r["submitted_at"],
-            ))
+        extracted = [
+            (r["description"], r["status"], r["submitted_at"])
+            for r in rows
+        ]
 
         db.close()
 
-        for row in comp_rows:
+        for row in extracted:
             self.table.insert("", "end", values=row)
 
-    # open submit complaint page
     def open_submit_complaint(self):
-        from ui.tenant_portal.complaints.submit_complaint import SubmitComplaintPage
-        self.main_window.load_page(SubmitComplaintPage)
+        from ui.tenant_portal.complaints.submit_complaint import SubmitComplaint
+        self.main_window.load_page(SubmitComplaint)
 
-    # open complaint history page
     def open_history(self):
-        from ui.tenant_portal.complaints.view_complaints import TenantComplaintHistoryPage
-        self.main_window.load_page(TenantComplaintHistoryPage)
+        from ui.tenant_portal.complaints.view_complaints import ViewComplaints
+        self.main_window.load_page(ViewComplaints)
 
-    # back to dashboard
     def go_home(self):
         from ui.tenant_portal.tenant_dashboard import TenantDashboard
         self.main_window.load_page(TenantDashboard)

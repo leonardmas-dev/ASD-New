@@ -6,12 +6,13 @@ from database.session import get_session
 
 
 class ComplaintListPage(tk.Frame):
-    """List of complaints for selection."""
+    """Read-only list of complaints."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+        self.main_window = main_window
 
-        tk.Label(self, text="Select Complaint", font=("Arial", 22)).pack(pady=20)
+        tk.Label(self, text="Complaint List", font=("Arial", 22)).pack(pady=20)
 
         self.table = ttk.Treeview(
             self,
@@ -28,6 +29,8 @@ class ComplaintListPage(tk.Frame):
             self.table.heading(col, text=text)
 
         self.table.pack(fill="both", expand=True, pady=10)
+
+        tk.Button(self, text="Back", width=10, command=self.go_back).pack(pady=15)
 
         self.load_data()
 
@@ -48,3 +51,7 @@ class ComplaintListPage(tk.Frame):
                     r["status"],
                 ),
             )
+
+    def go_back(self):
+        from ui.complaints.complaints_home import ComplaintsHome
+        self.main_window.load_page(ComplaintsHome)

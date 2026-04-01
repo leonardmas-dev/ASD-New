@@ -6,12 +6,13 @@ from database.models import Lease, Tenant, Apartment
 
 
 class LeaseListPage(tk.Frame):
-    """List of leases for selection."""
+    """Read-only list of leases."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+        self.main_window = main_window
 
-        tk.Label(self, text="Select Lease", font=("Arial", 22)).pack(pady=20)
+        tk.Label(self, text="Lease List", font=("Arial", 22)).pack(pady=20)
 
         self.table = ttk.Treeview(
             self,
@@ -28,6 +29,8 @@ class LeaseListPage(tk.Frame):
             self.table.heading(col, text=text)
 
         self.table.pack(fill="both", expand=True, pady=10)
+
+        tk.Button(self, text="Back", width=10, command=self.go_back).pack(pady=15)
 
         self.load_data()
 
@@ -55,3 +58,7 @@ class LeaseListPage(tk.Frame):
                     "Yes" if lease.is_active else "No",
                 ),
             )
+
+    def go_back(self):
+        from ui.leases.leases_home import LeasesHome
+        self.main_window.load_page(LeasesHome)

@@ -26,13 +26,6 @@ class PaymentsHome(tk.Frame):
 
         tk.Button(
             btn_frame,
-            text="Edit Payment",
-            width=18,
-            command=self.open_edit_page
-        ).grid(row=0, column=1, padx=5)
-
-        tk.Button(
-            btn_frame,
             text="View Payment List",
             width=18,
             command=self.open_list_page
@@ -97,15 +90,10 @@ class PaymentsHome(tk.Frame):
 
     # open add payment page
     def open_add_page(self):
-        from ui.payments.add_payment_page import AddPaymentPage
-        self.main_window.load_page(AddPaymentPage)
-
-    # open edit payment page
-    def open_edit_page(self):
-        from ui.payments.edit_payment_page import EditPaymentPage
-        self.main_window.load_page(EditPaymentPage)
+        from ui.payments.record_payment_page import RecordPaymentPage
+        self.main_window.load_page(RecordPaymentPage)
 
     # open payment list page
     def open_list_page(self):
-        from ui.payments.payment_list_page import PaymentListPage
-        self.main_window.load_page(PaymentListPage)
+        from ui.payments.payment_history_page import PaymentHistoryPage
+        self.main_window.load_page(PaymentHistoryPage)

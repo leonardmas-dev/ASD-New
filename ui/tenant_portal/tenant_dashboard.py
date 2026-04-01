@@ -6,14 +6,16 @@ class TenantDashboard(tk.Frame):
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+
         self.main_window = main_window
+        self.session = main_window.user_session
 
         tk.Label(self, text="Tenant Dashboard", font=("Arial", 24)).pack(pady=20)
 
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
-        # my lease
+        # My Lease
         tk.Button(
             btn_frame,
             text="My Lease",
@@ -21,7 +23,7 @@ class TenantDashboard(tk.Frame):
             command=self.open_lease
         ).grid(row=0, column=0, padx=5, pady=5)
 
-        # payments
+        # Payments
         tk.Button(
             btn_frame,
             text="Payments",
@@ -29,7 +31,7 @@ class TenantDashboard(tk.Frame):
             command=self.open_payments
         ).grid(row=0, column=1, padx=5, pady=5)
 
-        # payment graphs
+        # Payment Graphs
         tk.Button(
             btn_frame,
             text="Payment Graphs",
@@ -37,7 +39,7 @@ class TenantDashboard(tk.Frame):
             command=self.open_payment_graphs
         ).grid(row=1, column=0, padx=5, pady=5)
 
-        # maintenance
+        # Maintenance
         tk.Button(
             btn_frame,
             text="Maintenance",
@@ -45,7 +47,7 @@ class TenantDashboard(tk.Frame):
             command=self.open_maintenance
         ).grid(row=1, column=1, padx=5, pady=5)
 
-        # complaints
+        # Complaints
         tk.Button(
             btn_frame,
             text="Complaints",
@@ -53,27 +55,23 @@ class TenantDashboard(tk.Frame):
             command=self.open_complaints
         ).grid(row=2, column=0, padx=5, pady=5)
 
-    # open lease view
+    # Navigation methods
     def open_lease(self):
         from ui.tenant_portal.lease.lease_view import LeaseView
         self.main_window.load_page(LeaseView)
 
-    # open payments home
     def open_payments(self):
         from ui.tenant_portal.payments.payments_home import PaymentsHome
         self.main_window.load_page(PaymentsHome)
 
-    # open payment graphs
     def open_payment_graphs(self):
         from ui.tenant_portal.payments.payment_graphs import PaymentGraphs
         self.main_window.load_page(PaymentGraphs)
 
-    # open maintenance home
     def open_maintenance(self):
         from ui.tenant_portal.maintenance.maintenance_home import MaintenanceHome
         self.main_window.load_page(MaintenanceHome)
 
-    # open complaints home
     def open_complaints(self):
         from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
         self.main_window.load_page(ComplaintsHome)

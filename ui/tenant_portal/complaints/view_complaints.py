@@ -11,6 +11,7 @@ class ViewComplaints(tk.Frame):
     def __init__(self, parent, main_window):
         super().__init__(parent)
 
+        self.main_window = main_window
         self.session = main_window.user_session
 
         tk.Label(self, text="View Complaints", font=("Arial", 22)).pack(pady=20)
@@ -24,6 +25,12 @@ class ViewComplaints(tk.Frame):
         self.table.heading("status", text="Status")
         self.table.heading("submitted", text="Submitted At")
         self.table.pack(fill="both", expand=True, pady=10)
+
+        tk.Button(
+            self,
+            text="Back",
+            command=self.go_back
+        ).pack(pady=20)
 
         self.load_complaints()
 
@@ -39,3 +46,7 @@ class ViewComplaints(tk.Frame):
                 "end",
                 values=(r["description"], r["status"], r["submitted_at"]),
             )
+
+    def go_back(self):
+        from ui.tenant_portal.complaints.complaints_home import ComplaintsHome
+        self.main_window.load_page(ComplaintsHome)

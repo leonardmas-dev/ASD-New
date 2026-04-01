@@ -12,10 +12,10 @@ class MaintenanceHome(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
         self.session = main_window.user_session
+        tenant_id = self.session.tenant_id
 
         tk.Label(self, text="My Maintenance Requests", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -39,7 +39,7 @@ class MaintenanceHome(tk.Frame):
             command=self.go_home
         ).pack(pady=10)
 
-        # table
+        # Table
         self.table = ttk.Treeview(
             self,
             columns=("desc", "priority", "status", "submitted"),
@@ -53,38 +53,29 @@ class MaintenanceHome(tk.Frame):
 
         self.load_requests()
 
-    # load tenant requests
     def load_requests(self):
         db = get_session()
         service = MaintenanceService(db)
         rows = service.get_requests_for_tenant(self.session.tenant_id)
 
-        # extract before closing session
-        req_rows = []
-        for r in rows:
-            req_rows.append((
-                r["description"],
-                r["priority"],
-                r["status"],
-                r["submitted_at"],
-            ))
+        extracted = [
+            (r["description"], r["priority"], r["status"], r["submitted_at"])
+            for r in rows
+        ]
 
         db.close()
 
-        for row in req_rows:
+        for row in extracted:
             self.table.insert("", "end", values=row)
 
-    # open submit request page
     def open_submit_request(self):
-        from ui.tenant_portal.maintenance.submit_request import SubmitMaintenanceRequestPage
-        self.main_window.load_page(SubmitMaintenanceRequestPage)
+        from ui.tenant_portal.maintenance.submit_request import SubmitRequest
+        self.main_window.load_page(SubmitRequest)
 
-    # open request history page
     def open_history(self):
-        from ui.tenant_portal.maintenance.view_requests import TenantMaintenanceHistoryPage
-        self.main_window.load_page(TenantMaintenanceHistoryPage)
+        from ui.tenant_portal.maintenance.view_requests import ViewMaintenanceRequestsPage
+        self.main_window.load_page(ViewMaintenanceRequestsPage)
 
-    # back to dashboard
     def go_home(self):
         from ui.tenant_portal.tenant_dashboard import TenantDashboard
         self.main_window.load_page(TenantDashboard)

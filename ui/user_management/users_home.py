@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from backend.user_service import UserService
 
 
@@ -10,41 +10,46 @@ class UsersHomePage(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
 
-        tk.Label(self, text="User Management", font=("Arial", 18, "bold")).pack(pady=10)
+        tk.Label(self, text="User Management", font=("Arial", 22)).pack(pady=20)
 
-        # add user button
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=10)
+
         tk.Button(
-            self,
+            btn_frame,
             text="Add New User",
-            command=self.open_add_user,
-            width=20
-        ).pack(pady=5)
+            width=20,
+            command=self.open_add_user
+        ).grid(row=0, column=0, padx=5)
 
-        # edit user button
         tk.Button(
-            self,
+            btn_frame,
             text="Edit User",
-            command=self.open_edit_user_page,
-            width=20
-        ).pack(pady=5)
+            width=20,
+            command=self.open_edit_user
+        ).grid(row=0, column=1, padx=5)
 
-        # table of staff users
         self.table = ttk.Treeview(
             self,
-            columns=("name", "role", "location", "status"),
+            columns=("id", "name", "role", "location", "status"),
             show="headings"
         )
 
-        self.table.heading("name", text="Name")
-        self.table.heading("role", text="Role")
-        self.table.heading("location", text="Location")
-        self.table.heading("status", text="Status")
+        for col, text in [
+            ("id", "ID"),
+            ("name", "Name"),
+            ("role", "Role"),
+            ("location", "Location"),
+            ("status", "Status"),
+        ]:
+            self.table.heading(col, text=text)
+
+        self.table.column("id", width=0, stretch=False)
 
         self.table.pack(fill="both", expand=True, pady=10)
 
         self.load_users()
 
-    # load all users into table
     def load_users(self):
         for row in self.table.get_children():
             self.table.delete(row)
@@ -59,15 +64,13 @@ class UsersHomePage(tk.Frame):
             self.table.insert(
                 "",
                 "end",
-                values=(name, u.role, location, status)
+                values=(u.user_id, name, u.role, location, status)
             )
 
-    # open add user page
     def open_add_user(self):
         from ui.user_management.add_user_page import AddUserPage
         self.main_window.load_page(AddUserPage)
 
-    # open edit user page
-    def open_edit_user_page(self):
+    def open_edit_user(self):
         from ui.user_management.edit_user_page import EditUserPage
         self.main_window.load_page(EditUserPage)

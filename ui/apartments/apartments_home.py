@@ -1,17 +1,20 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from datetime import datetime
+
 from database.session import get_session
-from database.models import Apartment, Location
+from database.models import Apartment, Location, Lease
+
 
 class ApartmentsHome(tk.Frame):
-    """Staff overview of all apartments."""
+    """Staff overview of all apartments, including occupancy."""
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
         self.main_window = main_window
 
         tk.Label(self, text="Apartments", font=("Arial", 22)).pack(pady=20)
-        # buttons
+
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -19,27 +22,47 @@ class ApartmentsHome(tk.Frame):
             btn_frame,
             text="Add Apartment",
             width=18,
-            command=self.open_add_page
+            command=self.open_add_page,
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
             btn_frame,
             text="Edit Apartment",
             width=18,
-            command=self.open_edit_page
+            command=self.open_edit_page,
         ).grid(row=0, column=1, padx=5)
+
+        tk.Button(
+            btn_frame,
+            text="Assign to Tenant",
+            width=18,
+            command=self.open_assign_page,
+        ).grid(row=0, column=2, padx=5)
+
+        tk.Button(
+            btn_frame,
+            text="End Lease / Vacate",
+            width=18,
+            command=self.end_lease,
+        ).grid(row=0, column=3, padx=5)
 
         tk.Button(
             btn_frame,
             text="View Apartment List",
             width=18,
-            command=self.open_list_page
-        ).grid(row=0, column=2, padx=5)
+            command=self.open_list_page,
+        ).grid(row=0, column=4, padx=5)
 
-        # table
+        tk.Button(
+            btn_frame,
+            text="Refresh",
+            width=18,
+            command=self.refresh,
+        ).grid(row=0, column=5, padx=5)
+
         self.table = ttk.Treeview(
             self,
-            columns=("id", "location", "type", "rooms", "rent", "floor", "available", "active"),
+            columns=("id", "location", "type", "rooms", "rent", "floor", "available", "active", "tenant"),
             show="headings",
         )
 
@@ -52,48 +75,125 @@ class ApartmentsHome(tk.Frame):
             ("floor", "Floor"),
             ("available", "Available"),
             ("active", "Active"),
+            ("tenant", "Current Tenant"),
         ]
 
         for col, text in headings:
             self.table.heading(col, text=text)
 
+        self.table.column("id", width=0, stretch=False)
+
         self.table.pack(fill="both", expand=True, pady=10)
 
         self.load_data()
 
-    # load apartments into table
+    def refresh(self):
+        for row in self.table.get_children():
+            self.table.delete(row)
+        self.load_data()
+
     def load_data(self):
         db = get_session()
         apartments = db.query(Apartment).join(Location).all()
+        now = datetime.utcnow()
 
-        # load all rows before closing session
-        rows = []
         for apt in apartments:
-            rows.append((
-                apt.apartment_id,
-                apt.location.name,
-                apt.apartment_type,
-                apt.num_rooms,
-                apt.monthly_rent,
-                apt.floor_number,
-                "Yes" if apt.is_available else "No",
-                "Yes" if apt.is_active else "No",
-            ))
+            active_lease = None
+            for lease in apt.leases:
+                if lease.is_active and lease.start_date <= now <= lease.end_date:
+                    active_lease = lease
+                    break
+
+            tenant_name = ""
+            if active_lease and active_lease.tenant:
+                t = active_lease.tenant
+                tenant_name = f"{t.first_name} {t.last_name}"
+
+            self.table.insert(
+                "",
+                "end",
+                values=(
+                    apt.apartment_id,
+                    apt.location.name,
+                    apt.apartment_type,
+                    apt.num_rooms,
+                    apt.monthly_rent,
+                    apt.floor_number,
+                    "Yes" if apt.is_available else "No",
+                    "Yes" if apt.is_active else "No",
+                    tenant_name,
+                ),
+            )
 
         db.close()
 
-        for row in rows:
-            self.table.insert("", "end", values=row)
+    def _get_selected_apartment_id(self):
+        selected = self.table.selection()
+        if not selected:
+            messagebox.showerror("Error", "Please select an apartment first.")
+            return None
+        values = self.table.item(selected[0], "values")
+        return int(values[0])
 
-    # add apartments page
     def open_add_page(self):
         from ui.apartments.add_apartment_page import AddApartmentPage
         self.main_window.load_page(AddApartmentPage)
-    # edit apartments page
+
     def open_edit_page(self):
         from ui.apartments.edit_apartment_page import EditApartmentPage
-        self.main_window.load_page(EditApartmentPage)
-    # apartment list page
+        apt_id = self._get_selected_apartment_id()
+        if apt_id is None:
+            return
+        self.main_window.load_page(EditApartmentPage, apartment_id=apt_id)
+
+    def open_assign_page(self):
+        from ui.apartments.assign_apartment_page import AssignApartmentPage
+        apt_id = self._get_selected_apartment_id()
+        if apt_id is None:
+            return
+        self.main_window.load_page(AssignApartmentPage, apartment_id=apt_id)
+
+    def end_lease(self):
+        from database.models import Lease
+
+        apt_id = self._get_selected_apartment_id()
+        if apt_id is None:
+            return
+
+        db = get_session()
+        now = datetime.utcnow()
+
+        apt = db.query(Apartment).filter(Apartment.apartment_id == apt_id).first()
+        if not apt:
+            db.close()
+            messagebox.showerror("Error", "Apartment not found.")
+            return
+
+        active_lease = (
+            db.query(Lease)
+            .filter(
+                Lease.apartment_id == apt_id,
+                Lease.is_active == True,
+                Lease.start_date <= now,
+                Lease.end_date >= now,
+            )
+            .first()
+        )
+
+        if not active_lease:
+            db.close()
+            messagebox.showinfo("Info", "No active lease found for this apartment.")
+            return
+
+        active_lease.is_active = False
+        apt.is_available = True
+
+        db.commit()
+        db.close()
+
+        messagebox.showinfo("Success", "Lease ended and apartment vacated.")
+        self.refresh()
+
     def open_list_page(self):
         from ui.apartments.apartment_list_page import ApartmentListPage
         self.main_window.load_page(ApartmentListPage)

@@ -14,32 +14,37 @@ class MaintenanceHome(tk.Frame):
 
         tk.Label(self, text="Maintenance Requests", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
         tk.Button(
             btn_frame,
-            text="Add Request",
+            text="Create Request",
             width=18,
-            command=self.open_add_page
+            command=self.open_create_page,
         ).grid(row=0, column=0, padx=5)
 
         tk.Button(
             btn_frame,
-            text="Edit Request",
+            text="Update Request",
             width=18,
-            command=self.open_edit_page
+            command=self.open_update_page,
         ).grid(row=0, column=1, padx=5)
 
         tk.Button(
             btn_frame,
             text="View Request List",
             width=18,
-            command=self.open_list_page
+            command=self.open_list_page,
         ).grid(row=0, column=2, padx=5)
 
-        # table
+        tk.Button(
+            btn_frame,
+            text="Refresh",
+            width=12,
+            command=self.refresh_table,
+        ).grid(row=0, column=3, padx=5)
+
         self.table = ttk.Treeview(
             self,
             columns=("tenant", "apartment", "desc", "priority", "status", "submitted"),
@@ -60,40 +65,41 @@ class MaintenanceHome(tk.Frame):
 
         self.load_data()
 
-    # load maintenance requests
     def load_data(self):
         db = get_session()
         service = MaintenanceService(db)
         rows = service.get_all_requests()
 
-        # extract before closing session
-        req_rows = []
-        for r in rows:
-            req_rows.append((
+        extracted = [
+            (
                 r["tenant_name"],
                 r["apartment_label"],
                 r["description"],
                 r["priority"],
                 r["status"],
                 r["submitted_at"],
-            ))
+            )
+            for r in rows
+        ]
 
         db.close()
 
-        for row in req_rows:
+        for row in extracted:
             self.table.insert("", "end", values=row)
 
-    # open add request page
-    def open_add_page(self):
-        from ui.maintenance.add_request_page import AddRequestPage
-        self.main_window.load_page(AddRequestPage)
+    def refresh_table(self):
+        for item in self.table.get_children():
+            self.table.delete(item)
+        self.load_data()
 
-    # open edit request page
-    def open_edit_page(self):
-        from ui.maintenance.edit_request_page import EditRequestPage
-        self.main_window.load_page(EditRequestPage)
+    def open_create_page(self):
+        from ui.maintenance.create_request_page import CreateRequestPage
+        self.main_window.load_page(CreateRequestPage)
 
-    # open request list page
+    def open_update_page(self):
+        from ui.maintenance.update_request_page import UpdateRequestPage
+        self.main_window.load_page(UpdateRequestPage)
+
     def open_list_page(self):
-        from ui.maintenance.request_list_page import RequestListPage
-        self.main_window.load_page(RequestListPage)
+        from ui.maintenance.maintenance_list_page import MaintenanceListPage
+        self.main_window.load_page(MaintenanceListPage)

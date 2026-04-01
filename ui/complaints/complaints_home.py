@@ -14,7 +14,6 @@ class ComplaintsHome(tk.Frame):
 
         tk.Label(self, text="Complaints", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -39,7 +38,13 @@ class ComplaintsHome(tk.Frame):
             command=self.open_list_page
         ).grid(row=0, column=2, padx=5)
 
-        # table
+        tk.Button(
+            btn_frame,
+            text="Refresh",
+            width=12,
+            command=self.refresh_table
+        ).grid(row=0, column=3, padx=5)
+
         self.table = ttk.Treeview(
             self,
             columns=("tenant", "apartment", "desc", "status", "submitted"),
@@ -59,39 +64,40 @@ class ComplaintsHome(tk.Frame):
 
         self.load_data()
 
-    # load complaints
     def load_data(self):
         db = get_session()
         service = ComplaintService(db)
         rows = service.get_all_complaints()
 
-        # extract before closing session
-        comp_rows = []
-        for r in rows:
-            comp_rows.append((
+        extracted = [
+            (
                 r["tenant_name"],
                 r["apartment_label"],
                 r["description"],
                 r["status"],
                 r["submitted_at"],
-            ))
+            )
+            for r in rows
+        ]
 
         db.close()
 
-        for row in comp_rows:
+        for row in extracted:
             self.table.insert("", "end", values=row)
 
-    # open add complaint page
+    def refresh_table(self):
+        for item in self.table.get_children():
+            self.table.delete(item)
+        self.load_data()
+
     def open_add_page(self):
         from ui.complaints.add_complaint_page import AddComplaintPage
         self.main_window.load_page(AddComplaintPage)
 
-    # open edit complaint page
     def open_edit_page(self):
         from ui.complaints.edit_complaint_page import EditComplaintPage
         self.main_window.load_page(EditComplaintPage)
 
-    # open complaint list page
     def open_list_page(self):
         from ui.complaints.complaint_list_page import ComplaintListPage
         self.main_window.load_page(ComplaintListPage)

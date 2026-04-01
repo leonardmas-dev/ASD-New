@@ -11,33 +11,29 @@ class AddLeasePage(tk.Frame):
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
+        self.main_window = main_window
 
         tk.Label(self, text="Add Lease", font=("Arial", 22)).pack(pady=20)
 
         form = tk.Frame(self)
         form.pack(pady=10)
 
-        # tenant
         tk.Label(form, text="Tenant:").grid(row=0, column=0, sticky="e")
-        self.tenant_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.tenant_combo = ttk.Combobox(form, state="readonly", width=35)
         self.tenant_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        # apartment
         tk.Label(form, text="Apartment:").grid(row=1, column=0, sticky="e")
-        self.apartment_combo = ttk.Combobox(form, state="readonly", width=30)
+        self.apartment_combo = ttk.Combobox(form, state="readonly", width=35)
         self.apartment_combo.grid(row=1, column=1, padx=5, pady=5)
 
-        # rent
-        tk.Label(form, text="Monthly Rent:").grid(row=2, column=0, sticky="e")
+        tk.Label(form, text="Monthly Rent (£):").grid(row=2, column=0, sticky="e")
         self.rent_entry = tk.Entry(form)
         self.rent_entry.grid(row=2, column=1, padx=5, pady=5)
 
-        # deposit
-        tk.Label(form, text="Deposit:").grid(row=3, column=0, sticky="e")
+        tk.Label(form, text="Deposit (£):").grid(row=3, column=0, sticky="e")
         self.deposit_entry = tk.Entry(form)
         self.deposit_entry.grid(row=3, column=1, padx=5, pady=5)
 
-        # dates
         tk.Label(form, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky="e")
         self.start_entry = tk.Entry(form)
         self.start_entry.grid(row=4, column=1, padx=5, pady=5)
@@ -46,7 +42,11 @@ class AddLeasePage(tk.Frame):
         self.end_entry = tk.Entry(form)
         self.end_entry.grid(row=5, column=1, padx=5, pady=5)
 
-        tk.Button(self, text="Create Lease", command=self.save).pack(pady=15)
+        btn_frame = tk.Frame(self)
+        btn_frame.pack(pady=15)
+
+        tk.Button(btn_frame, text="Create Lease", width=18, command=self.save).grid(row=0, column=0, padx=5)
+        tk.Button(btn_frame, text="Back", width=10, command=self.go_back).grid(row=0, column=1, padx=5)
 
         self._load_dropdowns()
 
@@ -58,9 +58,14 @@ class AddLeasePage(tk.Frame):
 
         db.close()
 
-        self.tenant_map = {f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id for t in tenants}
+        self.tenant_map = {
+            f"{t.tenant_id} - {t.first_name} {t.last_name}": t.tenant_id
+            for t in tenants
+        }
+
         self.apartment_map = {
-            f"{a.apartment_id} - {a.location.city}": a.apartment_id for a in apartments
+            f"{a.apartment_id} - {a.location.city} ({a.apartment_type})": a.apartment_id
+            for a in apartments
         }
 
         self.tenant_combo["values"] = list(self.tenant_map.keys())
@@ -95,3 +100,7 @@ class AddLeasePage(tk.Frame):
         db.close()
 
         messagebox.showinfo("Success", "Lease created.")
+
+    def go_back(self):
+        from ui.leases.leases_home import LeasesHome
+        self.main_window.load_page(LeasesHome)
