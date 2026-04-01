@@ -1,3 +1,5 @@
+# Student: Leonard Masters     StudentID: 24031618
+
 import tkinter as tk
 from PIL import Image, ImageTk
 import os

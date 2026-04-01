@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from backend.user_service import UserService

@@ -1,3 +1,5 @@
+# Student: Thierno Batiga     StudentID: 24024769
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime

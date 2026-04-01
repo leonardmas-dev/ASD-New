@@ -1,3 +1,5 @@
+# Student: Thierno Batiga     StudentID: 24024769
+
 from typing import List, Dict, Optional
 
 from sqlalchemy.orm import Session

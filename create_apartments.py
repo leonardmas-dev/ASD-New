@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 from database.session import get_session
 from database.models import Apartment, Location
 

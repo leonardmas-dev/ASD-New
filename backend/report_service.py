@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 

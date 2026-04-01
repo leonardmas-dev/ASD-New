@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 from sqlalchemy import create_engine, text
 from .models import Base
 from utils.config import DB_URL, DB_NAME

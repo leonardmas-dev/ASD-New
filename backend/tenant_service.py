@@ -1,3 +1,5 @@
+# Student: Leonard Masters     StudentID: 24031618
+
 from database.models import Tenant, TenantAccount
 from database.session import get_session
 from sqlalchemy.orm import joinedload

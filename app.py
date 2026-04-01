@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 from ui.login_page import LoginPage
 from database.database_manager import initialize_database
 

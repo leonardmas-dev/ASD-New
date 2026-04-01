@@ -1,3 +1,5 @@
+# Student: Yaseen Sassi     StudentID: 24023127
+
 import bcrypt
 from sqlalchemy.orm import Session
 from database.models import User, TenantAccount, Tenant
