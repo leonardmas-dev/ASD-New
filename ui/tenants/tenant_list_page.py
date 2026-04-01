@@ -12,7 +12,7 @@ class TenantListPage(tk.Frame):
         super().__init__(parent)
         self.main_window = main_window
 
-        tk.Label(self, text="Select Tenant", font=("Arial", 22)).pack(pady=20)
+        tk.Label(self, text="Tenant List", font=("Arial", 22)).pack(pady=20)
 
         self.table = ttk.Treeview(
             self,

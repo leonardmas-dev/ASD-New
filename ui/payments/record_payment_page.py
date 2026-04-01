@@ -11,11 +11,11 @@ class RecordPaymentPage(tk.Frame):
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
-
         self.main_window = main_window
 
         tk.Label(self, text="Record Payment", font=("Arial", 22)).pack(pady=20)
 
+        # payment selector
         top = tk.Frame(self)
         top.pack(pady=5)
 
@@ -26,6 +26,7 @@ class RecordPaymentPage(tk.Frame):
 
         tk.Button(top, text="Load", command=self._load_selected).pack(side="left", padx=5)
 
+        # amount entry
         form = tk.Frame(self)
         form.pack(pady=15)
 
@@ -38,18 +39,21 @@ class RecordPaymentPage(tk.Frame):
         self._load_payments()
 
     def _load_payments(self):
+        """Load payments for active leases only."""
         db = get_session()
         rows = (
             db.query(Payment, Lease, Tenant, Apartment)
             .join(Lease, Payment.lease_id == Lease.lease_id)
             .join(Tenant, Lease.tenant_id == Tenant.tenant_id)
             .join(Apartment, Lease.apartment_id == Apartment.apartment_id)
+            .filter(Lease.is_active == True)  # only active leases
             .all()
         )
         db.close()
 
         self.payment_map = {}
         labels = []
+
         for pay, lease, tenant, apt in rows:
             label = (
                 f"ID {pay.payment_id} | {tenant.first_name} {tenant.last_name} | "
@@ -61,10 +65,11 @@ class RecordPaymentPage(tk.Frame):
         self.payment_combo["values"] = labels
 
     def _load_selected(self):
-        # kept simple: just focuses on amount entry; details already in combo text
+        """No extra fields to load; kept for structure."""
         pass
 
     def save_payment(self):
+        """Record payment amount and update status."""
         sel = self.payment_combo.get()
         if not sel:
             messagebox.showerror("Error", "Please select a payment.")
@@ -85,6 +90,6 @@ class RecordPaymentPage(tk.Frame):
 
         if ok:
             messagebox.showinfo("Success", "Payment recorded.")
-            self._load_payments()
+            self._load_payments()  # refresh list
         else:
             messagebox.showerror("Error", "Failed to record payment.")

@@ -11,11 +11,11 @@ class PaymentHistoryPage(tk.Frame):
 
     def __init__(self, parent, main_window):
         super().__init__(parent)
-
         self.main_window = main_window
 
         tk.Label(self, text="Payment History", font=("Arial", 22)).pack(pady=20)
 
+        # tenant selector
         top = tk.Frame(self)
         top.pack(pady=5)
 
@@ -26,11 +26,13 @@ class PaymentHistoryPage(tk.Frame):
 
         tk.Button(top, text="Load", command=self.load_history).pack(side="left", padx=5)
 
+        # table for payment records
         self.table = ttk.Treeview(
             self,
             columns=("amount_due", "amount_paid", "due_date", "payment_date", "status", "late_fee"),
             show="headings",
         )
+
         for col, text in [
             ("amount_due", "Amount Due"),
             ("amount_paid", "Amount Paid"),
@@ -46,20 +48,23 @@ class PaymentHistoryPage(tk.Frame):
         self._load_tenants()
 
     def _load_tenants(self):
+        """Load active tenants into dropdown."""
         db = get_session()
         tenants = db.query(Tenant).filter(Tenant.is_active == True).all()
         db.close()
 
         self.tenant_map = {}
         names = []
+
         for t in tenants:
-            name = f"{t.tenant_id} - {t.first_name} {t.last_name}"
-            names.append(name)
-            self.tenant_map[name] = t.tenant_id
+            label = f"{t.tenant_id} - {t.first_name} {t.last_name}"
+            names.append(label)
+            self.tenant_map[label] = t.tenant_id
 
         self.tenant_combo["values"] = names
 
     def load_history(self):
+        """Load payment history for selected tenant."""
         sel = self.tenant_combo.get()
         if not sel:
             return
@@ -71,8 +76,10 @@ class PaymentHistoryPage(tk.Frame):
         rows = service.get_payments_for_tenant(tenant_id)
         db.close()
 
+        # clear table
         self.table.delete(*self.table.get_children())
 
+        # insert rows
         for r in rows:
             self.table.insert(
                 "",

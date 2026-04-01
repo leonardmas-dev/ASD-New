@@ -89,11 +89,12 @@ class TenantsHome(tk.Frame):
     def open_edit_page(self):
         selected = self.table.selection()
         if not selected:
-            return  # or show a messagebox if you want
+            return
         tenant_id = self.table.item(selected[0], "values")[0]
         from ui.tenants.edit_tenant_page import EditTenantPage
-        self.main_window.load_page(EditTenantPage, tenant_id)
-
+        self.main_window.load_page(
+            lambda parent, mw: EditTenantPage(parent, mw, tenant_id)
+    )
     # open tenant list page
     def open_list_page(self):
         from ui.tenants.tenant_list_page import TenantListPage

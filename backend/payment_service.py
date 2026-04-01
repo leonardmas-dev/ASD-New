@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -11,14 +11,22 @@ class PaymentService:
     def __init__(self, db: Session):
         self.db = db
 
-    # create a payment record for a lease
-    def create_payment(
-        self,
-        lease_id: int,
-        amount_due: int,
-        due_date: datetime,
-    ) -> bool:
+    # create a payment record for an active lease only
+    def create_payment(self, lease_id: int, amount_due: int, due_date: datetime) -> bool:
         try:
+            lease = self.db.query(Lease).filter(Lease.lease_id == lease_id).first()
+            if not lease or not lease.is_active:
+                return False
+
+            # prevent duplicate payments for same due date
+            existing = (
+                self.db.query(Payment)
+                .filter(Payment.lease_id == lease_id, Payment.due_date == due_date)
+                .first()
+            )
+            if existing:
+                return False
+
             pay = Payment(
                 lease_id=lease_id,
                 amount_due=amount_due,
@@ -32,17 +40,14 @@ class PaymentService:
             self.db.add(pay)
             self.db.commit()
             return True
+
         except Exception as e:
             self.db.rollback()
             print(f"Create Payment Error: {e}")
             return False
 
     # mark payment as paid
-    def record_payment(
-        self,
-        payment_id: int,
-        amount_paid: int,
-    ) -> bool:
+    def record_payment(self, payment_id: int, amount_paid: int) -> bool:
         try:
             pay = (
                 self.db.query(Payment)
@@ -52,13 +57,16 @@ class PaymentService:
             if not pay:
                 return False
 
+            # block payments on inactive leases (UI already prevents this)
+            if not pay.lease.is_active:
+                return False
+
             pay.amount_paid = amount_paid
             pay.payment_date = datetime.now()
 
-            # late logic
             if pay.payment_date > pay.due_date:
                 pay.is_late = True
-                pay.late_fee = 25  # fixed fee of 25 pounds
+                pay.late_fee = 25
                 pay.status = "Late Paid"
             else:
                 pay.is_late = False
@@ -73,7 +81,7 @@ class PaymentService:
             print(f"Record Payment Error: {e}")
             return False
 
-    # staff view: all payments
+    # staff view: all payments (history)
     def get_all_payments(self) -> List[Dict]:
         try:
             rows = (
@@ -176,7 +184,6 @@ class PaymentService:
     # tenant graph: neighbour comparison
     def get_neighbour_comparison(self, tenant_id: int) -> Dict:
         try:
-            # tenant total
             tenant_total = (
                 self.db.query(func.sum(Payment.amount_paid))
                 .join(Lease, Payment.lease_id == Lease.lease_id)
@@ -184,7 +191,6 @@ class PaymentService:
                 .scalar()
             ) or 0
 
-            # find tenant's location
             lease = (
                 self.db.query(Lease)
                 .filter(Lease.tenant_id == tenant_id, Lease.is_active == True)
@@ -196,7 +202,6 @@ class PaymentService:
             apt = lease.apartment
             loc = apt.location
 
-            # neighbours = all tenants in same location
             neighbours_avg = (
                 self.db.query(func.avg(Payment.amount_paid))
                 .join(Lease, Payment.lease_id == Lease.lease_id)

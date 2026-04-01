@@ -13,16 +13,23 @@ class PaymentsHome(tk.Frame):
 
         tk.Label(self, text="Payments", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
+        # navigation buttons
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
         tk.Button(
             btn_frame,
-            text="Add Payment",
+            text="Create Payment",
             width=18,
-            command=self.open_add_page
+            command=self.open_create_page
         ).grid(row=0, column=0, padx=5)
+
+        tk.Button(
+            btn_frame,
+            text="Record Completed Payments",
+            width=26,
+            command=self.open_add_page
+        ).grid(row=0, column=1, padx=5)
 
         tk.Button(
             btn_frame,
@@ -31,7 +38,7 @@ class PaymentsHome(tk.Frame):
             command=self.open_list_page
         ).grid(row=0, column=2, padx=5)
 
-        # table
+        # payments table
         self.table = ttk.Treeview(
             self,
             columns=(
@@ -63,37 +70,40 @@ class PaymentsHome(tk.Frame):
 
         self.load_data()
 
-    # load payments into table
     def load_data(self):
+        """Load all payment records into the table."""
         db = get_session()
         service = PaymentService(db)
         rows = service.get_all_payments()
-
-        # extract before closing session
-        payment_rows = []
-        for r in rows:
-            payment_rows.append((
-                r["tenant_name"],
-                r["apartment_label"],
-                r["amount_due"],
-                r["amount_paid"],
-                r["due_date"],
-                r["payment_date"],
-                r["status"],
-                r["late_fee"],
-            ))
-
         db.close()
 
-        for row in payment_rows:
-            self.table.insert("", "end", values=row)
+        for r in rows:
+            self.table.insert(
+                "",
+                "end",
+                values=(
+                    r["tenant_name"],
+                    r["apartment_label"],
+                    r["amount_due"],
+                    r["amount_paid"],
+                    r["due_date"],
+                    r["payment_date"],
+                    r["status"],
+                    r["late_fee"],
+                ),
+            )
 
-    # open add payment page
     def open_add_page(self):
+        """Navigate to record payment page."""
         from ui.payments.record_payment_page import RecordPaymentPage
-        self.main_window.load_page(RecordPaymentPage)
+        self.main_window.load_page(lambda parent, mw: RecordPaymentPage(parent, mw))
 
-    # open payment list page
+    def open_create_page(self):
+        """Navigate to add payment page."""
+        from ui.payments.add_payment_page import AddPaymentPage
+        self.main_window.load_page(lambda parent, mw: AddPaymentPage(parent, mw))
+
     def open_list_page(self):
+        """Navigate to tenant payment history page."""
         from ui.payments.payment_history_page import PaymentHistoryPage
-        self.main_window.load_page(PaymentHistoryPage)
+        self.main_window.load_page(lambda parent, mw: PaymentHistoryPage(parent, mw))

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from database.session import get_session
 from database.models import Apartment, Location, Lease
+from sqlalchemy.orm import joinedload
 
 
 class ApartmentsHome(tk.Frame):
@@ -15,6 +16,15 @@ class ApartmentsHome(tk.Frame):
 
         tk.Label(self, text="Apartments", font=("Arial", 22)).pack(pady=20)
 
+        filter_frame = tk.Frame(self)
+        filter_frame.pack(pady=5)
+
+        tk.Label(filter_frame, text="Filter by Location:").pack(side="left", padx=5)
+
+        self.location_filter = ttk.Combobox(filter_frame, state="readonly", width=20)
+        self.location_filter.pack(side="left", padx=5)
+
+        self.location_filter.bind("<<ComboboxSelected>>", lambda e: self.refresh())
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -48,18 +58,10 @@ class ApartmentsHome(tk.Frame):
 
         tk.Button(
             btn_frame,
-            text="View Apartment List",
-            width=18,
-            command=self.open_list_page,
-        ).grid(row=0, column=4, padx=5)
-
-        tk.Button(
-            btn_frame,
             text="Refresh",
             width=18,
             command=self.refresh,
-        ).grid(row=0, column=5, padx=5)
-
+        ).grid(row=0, column=4, padx=5)
         self.table = ttk.Treeview(
             self,
             columns=("id", "location", "type", "rooms", "rent", "floor", "available", "active", "tenant"),
@@ -82,22 +84,43 @@ class ApartmentsHome(tk.Frame):
             self.table.heading(col, text=text)
 
         self.table.column("id", width=0, stretch=False)
-
         self.table.pack(fill="both", expand=True, pady=10)
-
+        self.load_locations()
         self.load_data()
 
+    # Load dropdown locations
+    def load_locations(self):
+        db = get_session()
+        locations = db.query(Location).all()
+        db.close()
+
+        names = ["All"] + [loc.name for loc in locations]
+        self.location_filter["values"] = names
+        self.location_filter.set("All")
     def refresh(self):
         for row in self.table.get_children():
             self.table.delete(row)
         self.load_data()
-
+    # load apartment data
     def load_data(self):
         db = get_session()
-        apartments = db.query(Apartment).join(Location).all()
+
+        selected_location = self.location_filter.get()
+
+        query = (
+            db.query(Apartment)
+            .options(joinedload(Apartment.location), joinedload(Apartment.leases))
+        )
+
+        # Apply filter
+        if selected_location and selected_location != "All":
+            query = query.join(Apartment.location).filter(Location.name == selected_location)
+
+        apartments = query.all()
         now = datetime.utcnow()
 
         for apt in apartments:
+            # Determine active lease
             active_lease = None
             for lease in apt.leases:
                 if lease.is_active and lease.start_date <= now <= lease.end_date:
@@ -126,7 +149,6 @@ class ApartmentsHome(tk.Frame):
             )
 
         db.close()
-
     def _get_selected_apartment_id(self):
         selected = self.table.selection()
         if not selected:
@@ -144,14 +166,18 @@ class ApartmentsHome(tk.Frame):
         apt_id = self._get_selected_apartment_id()
         if apt_id is None:
             return
-        self.main_window.load_page(EditApartmentPage, apartment_id=apt_id)
+        self.main_window.load_page(
+            lambda parent, mw: EditApartmentPage(parent, mw, apt_id)
+        )
 
     def open_assign_page(self):
         from ui.apartments.assign_apartment_page import AssignApartmentPage
         apt_id = self._get_selected_apartment_id()
         if apt_id is None:
             return
-        self.main_window.load_page(AssignApartmentPage, apartment_id=apt_id)
+        self.main_window.load_page(
+            lambda parent, mw: AssignApartmentPage(parent, mw, apt_id)
+        )
 
     def end_lease(self):
         from database.models import Lease
@@ -193,7 +219,3 @@ class ApartmentsHome(tk.Frame):
 
         messagebox.showinfo("Success", "Lease ended and apartment vacated.")
         self.refresh()
-
-    def open_list_page(self):
-        from ui.apartments.apartment_list_page import ApartmentListPage
-        self.main_window.load_page(ApartmentListPage)

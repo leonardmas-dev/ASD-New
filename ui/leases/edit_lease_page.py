@@ -27,25 +27,13 @@ class EditLeasePage(tk.Frame):
         form = tk.Frame(self)
         form.pack(pady=10)
 
-        tk.Label(form, text="Monthly Rent (£):").grid(row=0, column=0, sticky="e")
-        self.rent_entry = tk.Entry(form)
-        self.rent_entry.grid(row=0, column=1, padx=5, pady=5)
-
-        tk.Label(form, text="Deposit (£):").grid(row=1, column=0, sticky="e")
-        self.deposit_entry = tk.Entry(form)
-        self.deposit_entry.grid(row=1, column=1, padx=5, pady=5)
-
-        tk.Label(form, text="Start Date (YYYY-MM-DD):").grid(row=2, column=0, sticky="e")
+        tk.Label(form, text="Start Date (YYYY-MM-DD):").grid(row=0, column=0, sticky="e")
         self.start_entry = tk.Entry(form)
-        self.start_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.start_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        tk.Label(form, text="End Date (YYYY-MM-DD):").grid(row=3, column=0, sticky="e")
+        tk.Label(form, text="End Date (YYYY-MM-DD):").grid(row=1, column=0, sticky="e")
         self.end_entry = tk.Entry(form)
-        self.end_entry.grid(row=3, column=1, padx=5, pady=5)
-
-        tk.Label(form, text="Active:").grid(row=4, column=0, sticky="e")
-        self.active_combo = ttk.Combobox(form, values=["Yes", "No"], state="readonly", width=10)
-        self.active_combo.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        self.end_entry.grid(row=1, column=1, padx=5, pady=5)
 
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=15)
@@ -90,19 +78,11 @@ class EditLeasePage(tk.Frame):
             messagebox.showerror("Error", "Lease not found.")
             return
 
-        self.rent_entry.delete(0, tk.END)
-        self.rent_entry.insert(0, lease.monthly_rent)
-
-        self.deposit_entry.delete(0, tk.END)
-        self.deposit_entry.insert(0, lease.deposit_amount)
-
         self.start_entry.delete(0, tk.END)
         self.start_entry.insert(0, lease.start_date.strftime("%Y-%m-%d"))
 
         self.end_entry.delete(0, tk.END)
         self.end_entry.insert(0, lease.end_date.strftime("%Y-%m-%d"))
-
-        self.active_combo.set("Yes" if lease.is_active else "No")
 
     def save(self):
         if not self.current_lease_id:
@@ -110,11 +90,8 @@ class EditLeasePage(tk.Frame):
             return
 
         try:
-            rent = int(self.rent_entry.get())
-            deposit = int(self.deposit_entry.get())
             start = datetime.strptime(self.start_entry.get(), "%Y-%m-%d")
             end = datetime.strptime(self.end_entry.get(), "%Y-%m-%d")
-            active = self.active_combo.get() == "Yes"
         except Exception:
             messagebox.showerror("Error", "Invalid input.")
             return
@@ -122,11 +99,13 @@ class EditLeasePage(tk.Frame):
         db = get_session()
         lease = db.query(Lease).filter(Lease.lease_id == self.current_lease_id).first()
 
-        lease.monthly_rent = rent
-        lease.deposit_amount = deposit
+        if not lease:
+            db.close()
+            messagebox.showerror("Error", "Lease not found.")
+            return
+
         lease.start_date = start
         lease.end_date = end
-        lease.is_active = active
 
         db.commit()
         db.close()
