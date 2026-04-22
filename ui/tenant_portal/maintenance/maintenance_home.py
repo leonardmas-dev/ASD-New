@@ -3,8 +3,15 @@
 import tkinter as tk
 from tkinter import ttk
 
+
+# Importing the business logic layer that handles maintenance request operations
 from backend.maintenance_service import MaintenanceService
+
+# Importing the database session factory to open/close DB connections
+
 from database.session import get_session
+
+
 
 
 class MaintenanceHome(tk.Frame):
