@@ -3,7 +3,8 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 import os
-
+# Tenant Dashboard will be the landing page once tenants sign into PAMS
+# Only Tenant should see this. due to Role Based Access Control
 class TenantDashboard(tk.Frame):
     """Tenant dashboard."""
     def __init__(self, parent, main_window):

@@ -36,6 +36,7 @@ class TenantService:
         db.close()
         return tenant
 
+    # makes sure ni number is unique which ensures data is correct and consistent as well as avoiding duplicates.
     @staticmethod
     def ni_number_exists(ni_number):
         db = get_session()
@@ -71,11 +72,14 @@ class TenantService:
         db.commit()
         db.refresh(new_tenant)
 
+
+        # Hash all password before entering data base to be inline with data privacy and storing laws.
         hashed_pw = bcrypt.hashpw(
             data["password"].encode("utf-8"),
             bcrypt.gensalt()
         ).decode("utf-8")
 
+        # Once new user is created they automatically get a new tenant account, this saves time as two things can be done at once.
         new_tenant_user = TenantAccount(
             tenant_id=new_tenant.tenant_id,
             username=data["username"],
@@ -108,6 +112,7 @@ class TenantService:
         db.commit()
         db.close()
 
+    # Tenants can be deactivated, instead of fully deleting them, so it keeps historical record of things.
     @staticmethod
     def deactivate_tenant(tenant_id):
         db = get_session()
@@ -117,6 +122,7 @@ class TenantService:
             db.commit()
         db.close()
 
+    # as tenants are never fully deleted, we can activate tenants again.
     @staticmethod
     def activate_tenant(tenant_id):
         db = get_session()

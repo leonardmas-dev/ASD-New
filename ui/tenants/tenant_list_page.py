@@ -38,6 +38,7 @@ class TenantListPage(tk.Frame):
         # back button
         tk.Button(self, text="Back", width=18, command=self.go_back).pack(pady=10)
 
+    # loading tenant list 
     def load_data(self):
         db = get_session()
         tenants = db.query(Tenant).all()
@@ -55,6 +56,7 @@ class TenantListPage(tk.Frame):
                 ),
             )
 
+    #back to tenant_home 
     def go_back(self):
         from ui.tenants.tenants_home import TenantsHome
         self.main_window.load_page(TenantsHome)

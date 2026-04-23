@@ -16,7 +16,7 @@ class TenantsHome(tk.Frame):
 
         tk.Label(self, text="Tenants", font=("Arial", 22)).pack(pady=20)
 
-        # buttons
+        # b
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -41,7 +41,7 @@ class TenantsHome(tk.Frame):
             command=self.open_list_page
         ).grid(row=0, column=2, padx=5)
 
-        # table
+        # table of tenants
         self.table = ttk.Treeview(
             self,
             columns=("id", "name", "email", "phone", "active"),
@@ -61,7 +61,7 @@ class TenantsHome(tk.Frame):
 
         self.load_data()
 
-    # load tenants
+    # load tenants from DB
     def load_data(self):
         db = get_session()
         tenants = db.query(Tenant).all()
